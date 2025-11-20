@@ -170,6 +170,46 @@ fn print_symbols() {
     }
 
     println!();
+    println!("--- v1.3 Symbols ---");
+    println!();
+    
+    let v13_symbols = vec![
+        // File System
+        (Symbol::File, "📄"),
+        (Symbol::Dir, "📂"),
+        (Symbol::Path, "📍"),
+        (Symbol::Read, "📖"),
+        (Symbol::Write, "🖊️"),
+        (Symbol::Append, "🖇️"),
+        (Symbol::Delete, "🗑️"),
+        (Symbol::Perm, "🛂"),
+        // Streams & Buffers
+        (Symbol::Stream, "🌊"),
+        (Symbol::Buffer, "🧱"),
+        (Symbol::Flush, "🌬️"),
+        (Symbol::Eof, "🔚"),
+        (Symbol::Skip, "⏭️"),
+        // Networking
+        (Symbol::Socket, "🔌"),
+        (Symbol::Listen, "👂"),
+        (Symbol::Connect, "📞"),
+        (Symbol::Port, "🚪"),
+        (Symbol::Packet, "📦"),
+        (Symbol::Handshake, "🤝"),
+        // Process & OS
+        (Symbol::Process, "⚙️"),
+        (Symbol::Shell, "🐚"),
+        (Symbol::Env, "🌍"),
+        (Symbol::Memory, "🐏"),
+        (Symbol::Exit, "👋"),
+        (Symbol::Signal, "📶"),
+    ];
+
+    for (symbol, glyph) in v13_symbols {
+        println!("  {}  -  {}", glyph, symbol.description());
+    }
+
+    println!();
     println!("Example Programs:");
     println!();
     println!("User Registration:");
@@ -180,6 +220,15 @@ fn print_symbols() {
     println!();
     println!("Unit Test (v1.2):");
     println!("  🧪 \"AuthTest\": 🎭💾 ⨠ ⏱️(\"admin\" ⇢ ® ▷ res) ▷ time ⨠ ⚖️(res ≡ 200) ⨠ ⚖️(time < 50ms)");
+    println!();
+    println!("Log Rotation (v1.3):");
+    println!("  ƒ log: 📥msg ⨠ 📄📍\"/var/log/app.log\" ▷ f ⨠ ◇(f.size > 1GB): 🐚\"mv /var/log/app.log /var/log/app.old\" ⨠ msg ⇢ 🖇️f");
+    println!();
+    println!("TCP Echo Server (v1.3):");
+    println!("  🔌TCP ⨠ 👂8080 ⨠ ↻: (⏳👂 ▷ conn ⨠ ⚡(🛡(conn ⇢ 🌊 ▷ s ⨠ ↻(s ≠ 🔚): (s ⇢ 📖 ▷ data ⨠ data ⇢ 🖊️s ⨠ s ⇢ 🌬️)) ⨠ conn ⇢ 👋))");
+    println!();
+    println!("Environment Variable & Shell (v1.3):");
+    println!("  🌍\"PATH\" ▷ path ⨠ 🐚\"ls -la\" ▷ output ⨠ 📤output");
 }
 
 fn run_file(filename: &str) {

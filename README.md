@@ -149,6 +149,58 @@ Aether v1.2 introduces **15 new symbols** focused on testing, security, and scie
 ƒ calc: 📥v1 📥v2 ⨠ ((v1 - v2)↑2) ⇢ √ ▷ dist ⨠ ◇(dist ≈ 0) 📤"Same"
 ```
 
+## 🆕 What's New in v1.3
+
+Aether v1.3 introduces **26 new symbols** focused on system-level programming, I/O operations, and networking:
+
+### File System (8 symbols)
+- `📄` File - File handle/object
+- `📂` Dir - Directory/folder
+- `📍` Path - Path resolution
+- `📖` Read - Read content from file or stream
+- `🖊️` Write - Write content (overwrite mode)
+- `🖇️` Append - Append content (append mode)
+- `🗑️` Delete - Delete file or resource
+- `🛂` Perm - Permission control (chmod/chown)
+
+### Streams & Buffers (5 symbols)
+- `🌊` Stream - Data stream (Readable/Writable)
+- `🧱` Buffer - Binary buffer (Bytes/Blob)
+- `🌬️` Flush - Flush buffer
+- `🔚` EOF - End of file/stream marker
+- `⏭️` Skip - Skip bytes/move pointer
+
+### Networking (6 symbols)
+- `🔌` Socket - Network socket (TCP/UDP)
+- `👂` Listen - Listen on port (Server Bind)
+- `📞` Connect - Initiate connection (Client Connect)
+- `🚪` Port - Port number
+- `📦` Packet - Data packet (Datagram)
+- `🤝` Handshake - Protocol handshake/establish connection
+
+### Process & OS (6 symbols)
+- `⚙️` Process - Process object
+- `🐚` Shell - Execute shell command
+- `🌍` Env - Environment variable (Get/Set)
+- `🐏` Memory - Memory operations/manual allocation
+- `👋` Exit - Exit program (with exit code)
+- `📶` Signal - Send/capture system signal
+
+**Example - High Performance Log Rotation:**
+```aether
+ƒ log: 📥msg ⨠ 📄📍"/var/log/app.log" ▷ f ⨠ ◇(f.size > 1GB): 🐚"mv /var/log/app.log /var/log/app.old" ⨠ msg ⇢ 🖇️f
+```
+
+**Example - TCP Echo Server:**
+```aether
+🔌TCP ⨠ 👂8080 ⨠ ↻: (⏳👂 ▷ conn ⨠ ⚡(🛡(conn ⇢ 🌊 ▷ s ⨠ ↻(s ≠ 🔚): (s ⇢ 📖 ▷ data ⨠ data ⇢ 🖊️s ⨠ s ⇢ 🌬️)) ⨠ conn ⇢ 👋))
+```
+
+**Example - Environment & Shell Integration:**
+```aether
+🌍"PATH" ▷ path ⨠ 🐚"ls -la" ▷ output ⨠ 📤output
+```
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -291,6 +343,7 @@ cargo test test_lexer_basic_symbols
 - [x] CLI interface
 - [x] **v1.1: Extended symbol system** (Control Flow, Async, Data Manipulation, System)
 - [x] **v1.2: Testing, Security & Math symbols** (Testing/Debugging, Security/Crypto, Math/Science)
+- [x] **v1.3: System Programming & I/O** (File System, Streams & Buffers, Networking, Process & OS)
 - [ ] Full runtime with I/O
 - [ ] Database connectors
 - [ ] HTTP client/server

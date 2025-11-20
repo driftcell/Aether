@@ -272,6 +272,138 @@ pub enum AstNode {
         name: String,
         value: Box<AstNode>,
     },
+    
+    // File System (v1.3)
+    /// File handle
+    FileHandle {
+        path: Box<AstNode>,
+    },
+    
+    /// Directory
+    Directory {
+        path: Box<AstNode>,
+    },
+    
+    /// Path resolution
+    PathResolve {
+        path: Box<AstNode>,
+    },
+    
+    /// Read from file or stream
+    ReadContent {
+        source: Box<AstNode>,
+    },
+    
+    /// Write to file (overwrite)
+    WriteContent {
+        target: Box<AstNode>,
+        content: Box<AstNode>,
+    },
+    
+    /// Append to file
+    AppendContent {
+        target: Box<AstNode>,
+        content: Box<AstNode>,
+    },
+    
+    /// Delete file or resource
+    DeleteFile {
+        target: Box<AstNode>,
+    },
+    
+    /// Permission control
+    SetPermission {
+        target: Box<AstNode>,
+        permission: Box<AstNode>,
+    },
+    
+    // Streams & Buffers (v1.3)
+    /// Create stream
+    CreateStream {
+        source: Box<AstNode>,
+    },
+    
+    /// Buffer data
+    CreateBuffer {
+        size: Box<AstNode>,
+    },
+    
+    /// Flush buffer
+    FlushBuffer {
+        target: Box<AstNode>,
+    },
+    
+    /// End of file/stream
+    EndOfFile,
+    
+    /// Skip/Seek bytes
+    SkipBytes {
+        source: Box<AstNode>,
+        count: Box<AstNode>,
+    },
+    
+    // Networking (v1.3)
+    /// Socket
+    CreateSocket {
+        socket_type: Box<AstNode>,
+    },
+    
+    /// Listen on port
+    ListenPort {
+        port: Box<AstNode>,
+    },
+    
+    /// Connect to remote
+    ConnectRemote {
+        address: Box<AstNode>,
+    },
+    
+    /// Port number
+    PortNumber {
+        number: Box<AstNode>,
+    },
+    
+    /// Data packet
+    CreatePacket {
+        data: Box<AstNode>,
+    },
+    
+    /// Handshake
+    Handshake {
+        connection: Box<AstNode>,
+    },
+    
+    // Process & OS (v1.3)
+    /// Process object
+    ProcessCreate {
+        command: Box<AstNode>,
+    },
+    
+    /// Execute shell command
+    ShellExec {
+        command: Box<AstNode>,
+    },
+    
+    /// Environment variable
+    EnvVar {
+        name: Box<AstNode>,
+    },
+    
+    /// Memory operations
+    MemoryAlloc {
+        size: Box<AstNode>,
+    },
+    
+    /// Exit program
+    ExitProgram {
+        code: Box<AstNode>,
+    },
+    
+    /// System signal
+    SendSignal {
+        signal: Box<AstNode>,
+        target: Box<AstNode>,
+    },
 }
 
 /// Literal values in Aether
