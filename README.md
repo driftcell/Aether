@@ -68,6 +68,47 @@ Aether GlyphCode (~20 characters):
 | `🌐` | HTTP | HTTP request |
 | `®` | Register | Create/Register |
 
+## 🆕 What's New in v1.1
+
+Aether v1.1 introduces **23 new symbols** across four major categories:
+
+### Control Flow & Iteration
+- `↻` Loop/While - Unbounded loops
+- `∀` ForEach/Map - Collection iteration
+- `∃` Filter/Find - Predicate-based filtering
+- `∑` Reduce/Sum - Aggregation operations
+- `🛡` Try/Rescue - Exception handling
+- `♻` Retry - Failure retry mechanism
+
+### Concurrency & Async
+- `⚡` Async - Asynchronous execution
+- `⏳` Await - Wait for async results
+- `🧵` Thread - Concurrent task spawning
+- `🔒` Lock - Mutex/critical sections
+- `📡` Emit - Event broadcasting
+- `👁` Watch - Event listening
+
+### Data Manipulation
+- `✂` Split - String/array splitting
+- `🔗` Join - Element concatenation
+- `✱` Regex - Pattern matching
+- `≡` Equal - Strict equality
+- `≠` NotEqual - Inequality comparison
+- `🧊` Immutable - Constant definition
+
+### System & Environment
+- `🧩` Import - Module loading
+- `🔑` Auth - Authentication/tokens
+- `📅` DateTime - Time operations
+- `🎲` Random - Random generation
+- `🪵` Log - Logging output
+
+**Example - Concurrent Web Crawler:**
+```aether
+🧩🌐 ⨠ 🗂urls ▷ ∀(u): (⚡ 🛡(♻3: 🌐📥u)) ▷ res ⁇ 🛑 ⨠ ∃(res.ok) ▷ 💾
+```
+*(70 characters vs 300+ in traditional JavaScript - 4.3x compression!)*
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -208,6 +249,7 @@ cargo test test_lexer_basic_symbols
 - [x] Basic runtime execution
 - [x] Symbol system
 - [x] CLI interface
+- [x] **v1.1: Extended symbol system** (Control Flow, Async, Data Manipulation, System)
 - [ ] Full runtime with I/O
 - [ ] Database connectors
 - [ ] HTTP client/server
