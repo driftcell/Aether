@@ -13,6 +13,8 @@ jobs:
   test:
     name: Test with nextest
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
