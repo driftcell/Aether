@@ -463,4 +463,117 @@ mod tests {
         let var = runtime.get_variable("x").unwrap();
         assert_eq!(var, &Value::String("test".to_string()));
     }
+    
+    #[test]
+    fn test_runtime_split() {
+        let mut runtime = Runtime::new();
+        runtime.set_variable("_pipe".to_string(), Value::String("a,b,c".to_string()));
+        
+        let node = AstNode::Split {
+            target: Box::new(AstNode::Empty),
+            delimiter: Some(Box::new(AstNode::Literal(LiteralValue::String(",".to_string())))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        match result {
+            Value::Array(items) => assert_eq!(items.len(), 3),
+            _ => panic!("Expected array"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_foreach() {
+        let mut runtime = Runtime::new();
+        let items = vec![
+            Value::Number(1.0),
+            Value::Number(2.0),
+            Value::Number(3.0),
+        ];
+        
+        runtime.set_variable("_pipe".to_string(), Value::Array(items));
+        // Execute ForEach by setting collection to Empty and using _pipe
+        let node = AstNode::ForEach {
+            variable: "x".to_string(),
+            collection: Box::new(AstNode::Empty),
+            body: Box::new(AstNode::Variable("x".to_string())),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        match result {
+            Value::Array(results) => assert_eq!(results.len(), 3),
+            _ => panic!("Expected array"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_retry() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::Retry {
+            max_attempts: Some(3),
+            body: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(42.0));
+    }
+    
+    #[test]
+    fn test_runtime_try_rescue() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::TryRescue {
+            try_body: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+            rescue_body: Some(Box::new(AstNode::Literal(LiteralValue::Number(0.0)))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(42.0));
+    }
+    
+    #[test]
+    fn test_runtime_async() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::Async {
+            body: Box::new(AstNode::Literal(LiteralValue::String("async_result".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::String("async_result".to_string()));
+    }
+    
+    #[test]
+    fn test_runtime_log() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::Log {
+            message: Box::new(AstNode::Literal(LiteralValue::String("test message".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Null);
+    }
+    
+    #[test]
+    fn test_runtime_equal() {
+        let mut runtime = Runtime::new();
+        runtime.set_variable("_pipe".to_string(), Value::Number(42.0));
+        
+        let node = AstNode::Equal {
+            left: Box::new(AstNode::Empty),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+    }
+    
+    #[test]
+    fn test_runtime_datetime() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::DateTime;
+        
+        let result = runtime.eval_node(&node).unwrap();
+        match result {
+            Value::String(_) => {},
+            _ => panic!("Expected string timestamp"),
+        }
+    }
 }
