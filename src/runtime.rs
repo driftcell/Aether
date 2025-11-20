@@ -1128,6 +1128,37 @@ impl Runtime {
                 println!("Sending signal {:?} to {:?}", sig, tgt);
                 Ok(Value::Boolean(true))
             }
+            
+            AstNode::PropertyAccess { object, property } => {
+                let obj = self.eval_node(object)?;
+                
+                match obj {
+                    Value::Object(map) => {
+                        Ok(map.get(property).cloned().unwrap_or(Value::Null))
+                    }
+                    _ => Err(AetherError::RuntimeError(
+                        format!("Cannot access property '{}' on non-object value", property)
+                    ))
+                }
+            }
+            
+            AstNode::Comparison { left, operator, right } => {
+                use crate::parser::ComparisonOp;
+                let left_val = self.eval_node(left)?;
+                let right_val = self.eval_node(right)?;
+                
+                let result = match (left_val, right_val) {
+                    (Value::Number(l), Value::Number(r)) => {
+                        match operator {
+                            ComparisonOp::GreaterThan => l > r,
+                            ComparisonOp::LessThan => l < r,
+                        }
+                    }
+                    _ => false,
+                };
+                
+                Ok(Value::Boolean(result))
+            }
         }
     }
 

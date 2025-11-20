@@ -404,6 +404,26 @@ pub enum AstNode {
         signal: Box<AstNode>,
         target: Box<AstNode>,
     },
+    
+    /// Property access (e.g., obj.field)
+    PropertyAccess {
+        object: Box<AstNode>,
+        property: String,
+    },
+    
+    /// Comparison operations (>, <)
+    Comparison {
+        left: Box<AstNode>,
+        operator: ComparisonOp,
+        right: Box<AstNode>,
+    },
+}
+
+/// Comparison operators
+#[derive(Debug, Clone, PartialEq)]
+pub enum ComparisonOp {
+    GreaterThan,
+    LessThan,
 }
 
 /// Literal values in Aether
@@ -505,6 +525,47 @@ impl Parser {
     /// Parse pipe operations
     fn parse_pipe(&mut self) -> Result<AstNode> {
         let mut expr = self.parse_primary()?;
+        
+        // Handle property access with dot operator
+        while self.match_token_type(&TokenType::Dot) {
+            if let Some(token) = self.peek() {
+                if let TokenType::Symbol(Symbol::Identifier(prop)) = &token.token_type {
+                    let property = prop.clone();
+                    self.advance();
+                    expr = AstNode::PropertyAccess {
+                        object: Box::new(expr),
+                        property,
+                    };
+                } else {
+                    return Err(AetherError::ParserError(
+                        "Expected property name after '.'".to_string(),
+                    ));
+                }
+            } else {
+                return Err(AetherError::ParserError(
+                    "Expected property name after '.'".to_string(),
+                ));
+            }
+        }
+        
+        // Handle comparison operators
+        if let Some(token) = self.peek() {
+            let op = match &token.token_type {
+                TokenType::GreaterThan => Some(ComparisonOp::GreaterThan),
+                TokenType::LessThan => Some(ComparisonOp::LessThan),
+                _ => None,
+            };
+            
+            if let Some(operator) = op {
+                self.advance();
+                let right = self.parse_primary()?;
+                expr = AstNode::Comparison {
+                    left: Box::new(expr),
+                    operator,
+                    right: Box::new(right),
+                };
+            }
+        }
 
         while self.match_symbol(&Symbol::Pipe) || self.match_symbol(&Symbol::PipeInto) {
             let was_pipe_into = matches!(
@@ -604,6 +665,17 @@ impl Parser {
                     let n = *n;
                     self.advance();
                     Ok(AstNode::Literal(LiteralValue::Number(n)))
+                }
+                // Handle parentheses for grouping
+                TokenType::LeftParen => {
+                    self.advance();
+                    let expr = self.parse_expression()?;
+                    if !self.match_token_type(&TokenType::RightParen) {
+                        return Err(AetherError::ParserError(
+                            "Expected closing parenthesis".to_string(),
+                        ));
+                    }
+                    Ok(expr)
                 }
                 TokenType::Symbol(Symbol::Empty) => {
                     self.advance();
@@ -1015,6 +1087,189 @@ impl Parser {
                     Ok(AstNode::Delta {
                         name,
                         value: Box::new(value),
+                    })
+                }
+                
+                // File System (v1.3)
+                TokenType::Symbol(Symbol::File) => {
+                    self.advance();
+                    let path = self.parse_primary()?;
+                    Ok(AstNode::FileHandle {
+                        path: Box::new(path),
+                    })
+                }
+                TokenType::Symbol(Symbol::Dir) => {
+                    self.advance();
+                    let path = self.parse_primary()?;
+                    Ok(AstNode::Directory {
+                        path: Box::new(path),
+                    })
+                }
+                TokenType::Symbol(Symbol::Path) => {
+                    self.advance();
+                    let path = self.parse_primary()?;
+                    Ok(AstNode::PathResolve {
+                        path: Box::new(path),
+                    })
+                }
+                TokenType::Symbol(Symbol::Read) => {
+                    self.advance();
+                    Ok(AstNode::ReadContent {
+                        source: Box::new(AstNode::Empty), // Will be set by pipe
+                    })
+                }
+                TokenType::Symbol(Symbol::Write) => {
+                    self.advance();
+                    let target = self.parse_primary()?;
+                    Ok(AstNode::WriteContent {
+                        target: Box::new(target),
+                        content: Box::new(AstNode::Empty), // Will be set by pipe
+                    })
+                }
+                TokenType::Symbol(Symbol::Append) => {
+                    self.advance();
+                    let target = self.parse_primary()?;
+                    Ok(AstNode::AppendContent {
+                        target: Box::new(target),
+                        content: Box::new(AstNode::Empty), // Will be set by pipe
+                    })
+                }
+                TokenType::Symbol(Symbol::Delete) => {
+                    self.advance();
+                    let target = self.parse_primary()?;
+                    Ok(AstNode::DeleteFile {
+                        target: Box::new(target),
+                    })
+                }
+                TokenType::Symbol(Symbol::Perm) => {
+                    self.advance();
+                    let target = self.parse_primary()?;
+                    let permission = self.parse_primary()?;
+                    Ok(AstNode::SetPermission {
+                        target: Box::new(target),
+                        permission: Box::new(permission),
+                    })
+                }
+                
+                // Streams & Buffers (v1.3)
+                TokenType::Symbol(Symbol::Stream) => {
+                    self.advance();
+                    Ok(AstNode::CreateStream {
+                        source: Box::new(AstNode::Empty), // Will be set by pipe
+                    })
+                }
+                TokenType::Symbol(Symbol::Buffer) => {
+                    self.advance();
+                    let size = self.parse_primary()?;
+                    Ok(AstNode::CreateBuffer {
+                        size: Box::new(size),
+                    })
+                }
+                TokenType::Symbol(Symbol::Flush) => {
+                    self.advance();
+                    Ok(AstNode::FlushBuffer {
+                        target: Box::new(AstNode::Empty), // Will be set by pipe
+                    })
+                }
+                TokenType::Symbol(Symbol::Eof) => {
+                    self.advance();
+                    Ok(AstNode::EndOfFile)
+                }
+                TokenType::Symbol(Symbol::Skip) => {
+                    self.advance();
+                    let count = self.parse_primary()?;
+                    Ok(AstNode::SkipBytes {
+                        source: Box::new(AstNode::Empty), // Will be set by pipe
+                        count: Box::new(count),
+                    })
+                }
+                
+                // Networking (v1.3)
+                TokenType::Symbol(Symbol::Socket) => {
+                    self.advance();
+                    let socket_type = self.parse_primary()?;
+                    Ok(AstNode::CreateSocket {
+                        socket_type: Box::new(socket_type),
+                    })
+                }
+                TokenType::Symbol(Symbol::Listen) => {
+                    self.advance();
+                    Ok(AstNode::ListenPort {
+                        port: Box::new(AstNode::Empty), // Will be set by pipe or next token
+                    })
+                }
+                TokenType::Symbol(Symbol::Connect) => {
+                    self.advance();
+                    let address = self.parse_primary()?;
+                    Ok(AstNode::ConnectRemote {
+                        address: Box::new(address),
+                    })
+                }
+                TokenType::Symbol(Symbol::Port) => {
+                    self.advance();
+                    let number = self.parse_primary()?;
+                    Ok(AstNode::PortNumber {
+                        number: Box::new(number),
+                    })
+                }
+                TokenType::Symbol(Symbol::Packet) => {
+                    self.advance();
+                    let data = self.parse_primary()?;
+                    Ok(AstNode::CreatePacket {
+                        data: Box::new(data),
+                    })
+                }
+                TokenType::Symbol(Symbol::Handshake) => {
+                    self.advance();
+                    let connection = self.parse_primary()?;
+                    Ok(AstNode::Handshake {
+                        connection: Box::new(connection),
+                    })
+                }
+                
+                // Process & OS (v1.3)
+                TokenType::Symbol(Symbol::Process) => {
+                    self.advance();
+                    let command = self.parse_primary()?;
+                    Ok(AstNode::ProcessCreate {
+                        command: Box::new(command),
+                    })
+                }
+                TokenType::Symbol(Symbol::Shell) => {
+                    self.advance();
+                    let command = self.parse_primary()?;
+                    Ok(AstNode::ShellExec {
+                        command: Box::new(command),
+                    })
+                }
+                TokenType::Symbol(Symbol::Env) => {
+                    self.advance();
+                    let name = self.parse_primary()?;
+                    Ok(AstNode::EnvVar {
+                        name: Box::new(name),
+                    })
+                }
+                TokenType::Symbol(Symbol::Memory) => {
+                    self.advance();
+                    let size = self.parse_primary()?;
+                    Ok(AstNode::MemoryAlloc {
+                        size: Box::new(size),
+                    })
+                }
+                TokenType::Symbol(Symbol::Exit) => {
+                    self.advance();
+                    let code = self.parse_primary()?;
+                    Ok(AstNode::ExitProgram {
+                        code: Box::new(code),
+                    })
+                }
+                TokenType::Symbol(Symbol::Signal) => {
+                    self.advance();
+                    let signal = self.parse_primary()?;
+                    let target = self.parse_primary()?;
+                    Ok(AstNode::SendSignal {
+                        signal: Box::new(signal),
+                        target: Box::new(target),
                     })
                 }
                 
