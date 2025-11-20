@@ -826,6 +826,308 @@ impl Runtime {
                 self.variables.insert(delta_name.clone(), val.clone());
                 Ok(val)
             }
+            
+            // File System (v1.3)
+            AstNode::FileHandle { path } => {
+                let path_val = self.eval_node(path)?;
+                let path_str = path_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("File path must be string".to_string()))?;
+                
+                // Return file object representation
+                let mut file_obj = HashMap::new();
+                file_obj.insert("type".to_string(), Value::String("file".to_string()));
+                file_obj.insert("path".to_string(), Value::String(path_str.to_string()));
+                Ok(Value::Object(file_obj))
+            }
+            
+            AstNode::Directory { path } => {
+                let path_val = self.eval_node(path)?;
+                let path_str = path_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("Directory path must be string".to_string()))?;
+                
+                // Return directory object representation
+                let mut dir_obj = HashMap::new();
+                dir_obj.insert("type".to_string(), Value::String("directory".to_string()));
+                dir_obj.insert("path".to_string(), Value::String(path_str.to_string()));
+                Ok(Value::Object(dir_obj))
+            }
+            
+            AstNode::PathResolve { path } => {
+                let path_val = self.eval_node(path)?;
+                let path_str = path_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("Path must be string".to_string()))?;
+                
+                // In real implementation, would resolve path
+                println!("Resolving path: {}", path_str);
+                Ok(Value::String(path_str.to_string()))
+            }
+            
+            AstNode::ReadContent { source } => {
+                let src = self.eval_node(source)?;
+                
+                // Simulate reading content
+                if let Value::Object(obj) = src {
+                    if let Some(Value::String(path)) = obj.get("path") {
+                        println!("Reading from: {}", path);
+                        Ok(Value::String(format!("Content from {}", path)))
+                    } else {
+                        Err(AetherError::RuntimeError("Invalid file object for reading".to_string()))
+                    }
+                } else {
+                    // Direct path string
+                    let path = src.as_string()
+                        .ok_or_else(|| AetherError::RuntimeError("Read requires file or path".to_string()))?;
+                    println!("Reading from: {}", path);
+                    Ok(Value::String(format!("Content from {}", path)))
+                }
+            }
+            
+            AstNode::WriteContent { target, content } => {
+                let tgt = self.eval_node(target)?;
+                let cnt = self.eval_node(content)?;
+                
+                let path = if let Value::Object(obj) = &tgt {
+                    obj.get("path")
+                        .and_then(|v| v.as_string())
+                        .ok_or_else(|| AetherError::RuntimeError("Invalid file object".to_string()))?
+                } else {
+                    tgt.as_string()
+                        .ok_or_else(|| AetherError::RuntimeError("Write target must be file or path".to_string()))?
+                };
+                
+                println!("Writing to {}: {:?}", path, cnt);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::AppendContent { target, content } => {
+                let tgt = self.eval_node(target)?;
+                let cnt = self.eval_node(content)?;
+                
+                let path = if let Value::Object(obj) = &tgt {
+                    obj.get("path")
+                        .and_then(|v| v.as_string())
+                        .ok_or_else(|| AetherError::RuntimeError("Invalid file object".to_string()))?
+                } else {
+                    tgt.as_string()
+                        .ok_or_else(|| AetherError::RuntimeError("Append target must be file or path".to_string()))?
+                };
+                
+                println!("Appending to {}: {:?}", path, cnt);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::DeleteFile { target } => {
+                let tgt = self.eval_node(target)?;
+                
+                let path = if let Value::Object(obj) = &tgt {
+                    obj.get("path")
+                        .and_then(|v| v.as_string())
+                        .ok_or_else(|| AetherError::RuntimeError("Invalid file object".to_string()))?
+                } else {
+                    tgt.as_string()
+                        .ok_or_else(|| AetherError::RuntimeError("Delete target must be file or path".to_string()))?
+                };
+                
+                println!("Deleting: {}", path);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::SetPermission { target, permission } => {
+                let tgt = self.eval_node(target)?;
+                let perm = self.eval_node(permission)?;
+                
+                let path = if let Value::Object(obj) = &tgt {
+                    obj.get("path")
+                        .and_then(|v| v.as_string())
+                        .ok_or_else(|| AetherError::RuntimeError("Invalid file object".to_string()))?
+                } else {
+                    tgt.as_string()
+                        .ok_or_else(|| AetherError::RuntimeError("Permission target must be file or path".to_string()))?
+                };
+                
+                println!("Setting permission on {}: {:?}", path, perm);
+                Ok(Value::Boolean(true))
+            }
+            
+            // Streams & Buffers (v1.3)
+            AstNode::CreateStream { source } => {
+                let src = self.eval_node(source)?;
+                
+                // Create stream object
+                let mut stream_obj = HashMap::new();
+                stream_obj.insert("type".to_string(), Value::String("stream".to_string()));
+                stream_obj.insert("source".to_string(), src);
+                stream_obj.insert("position".to_string(), Value::Number(0.0));
+                Ok(Value::Object(stream_obj))
+            }
+            
+            AstNode::CreateBuffer { size } => {
+                let sz = self.eval_node(size)?;
+                let size_num = sz.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Buffer size must be number".to_string()))?;
+                
+                // Create buffer object
+                let mut buffer_obj = HashMap::new();
+                buffer_obj.insert("type".to_string(), Value::String("buffer".to_string()));
+                buffer_obj.insert("size".to_string(), Value::Number(size_num));
+                buffer_obj.insert("data".to_string(), Value::Array(Vec::new()));
+                Ok(Value::Object(buffer_obj))
+            }
+            
+            AstNode::FlushBuffer { target } => {
+                let tgt = self.eval_node(target)?;
+                println!("Flushing buffer: {:?}", tgt);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::EndOfFile => {
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::SkipBytes { source, count } => {
+                let src = self.eval_node(source)?;
+                let cnt = self.eval_node(count)?;
+                let count_num = cnt.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Skip count must be number".to_string()))?;
+                
+                println!("Skipping {} bytes in stream: {:?}", count_num, src);
+                Ok(src)
+            }
+            
+            // Networking (v1.3)
+            AstNode::CreateSocket { socket_type } => {
+                let sock_type = self.eval_node(socket_type)?;
+                
+                // Create socket object
+                let mut socket_obj = HashMap::new();
+                socket_obj.insert("type".to_string(), Value::String("socket".to_string()));
+                socket_obj.insert("protocol".to_string(), sock_type);
+                socket_obj.insert("connected".to_string(), Value::Boolean(false));
+                Ok(Value::Object(socket_obj))
+            }
+            
+            AstNode::ListenPort { port } => {
+                let port_val = self.eval_node(port)?;
+                let port_num = port_val.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Port must be number".to_string()))?;
+                
+                println!("Listening on port: {}", port_num);
+                
+                // Return listener object
+                let mut listener_obj = HashMap::new();
+                listener_obj.insert("type".to_string(), Value::String("listener".to_string()));
+                listener_obj.insert("port".to_string(), Value::Number(port_num));
+                listener_obj.insert("active".to_string(), Value::Boolean(true));
+                Ok(Value::Object(listener_obj))
+            }
+            
+            AstNode::ConnectRemote { address } => {
+                let addr = self.eval_node(address)?;
+                let addr_str = addr.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("Connect address must be string".to_string()))?;
+                
+                println!("Connecting to: {}", addr_str);
+                
+                // Return connection object
+                let mut conn_obj = HashMap::new();
+                conn_obj.insert("type".to_string(), Value::String("connection".to_string()));
+                conn_obj.insert("address".to_string(), Value::String(addr_str.to_string()));
+                conn_obj.insert("connected".to_string(), Value::Boolean(true));
+                Ok(Value::Object(conn_obj))
+            }
+            
+            AstNode::PortNumber { number } => {
+                let num = self.eval_node(number)?;
+                let port_num = num.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Port number must be numeric".to_string()))?;
+                
+                Ok(Value::Number(port_num))
+            }
+            
+            AstNode::CreatePacket { data } => {
+                let packet_data = self.eval_node(data)?;
+                
+                // Create packet object
+                let mut packet_obj = HashMap::new();
+                packet_obj.insert("type".to_string(), Value::String("packet".to_string()));
+                packet_obj.insert("data".to_string(), packet_data);
+                Ok(Value::Object(packet_obj))
+            }
+            
+            AstNode::Handshake { connection } => {
+                let conn = self.eval_node(connection)?;
+                println!("Performing handshake: {:?}", conn);
+                Ok(Value::Boolean(true))
+            }
+            
+            // Process & OS (v1.3)
+            AstNode::ProcessCreate { command } => {
+                let cmd = self.eval_node(command)?;
+                let cmd_str = cmd.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("Process command must be string".to_string()))?;
+                
+                println!("Creating process: {}", cmd_str);
+                
+                // Return process object
+                let mut proc_obj = HashMap::new();
+                proc_obj.insert("type".to_string(), Value::String("process".to_string()));
+                proc_obj.insert("command".to_string(), Value::String(cmd_str.to_string()));
+                proc_obj.insert("pid".to_string(), Value::Number(12345.0));
+                Ok(Value::Object(proc_obj))
+            }
+            
+            AstNode::ShellExec { command } => {
+                let cmd = self.eval_node(command)?;
+                let cmd_str = cmd.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("Shell command must be string".to_string()))?;
+                
+                println!("Executing shell command: {}", cmd_str);
+                
+                // Simulate command execution
+                Ok(Value::String(format!("Output of: {}", cmd_str)))
+            }
+            
+            AstNode::EnvVar { name } => {
+                let name_val = self.eval_node(name)?;
+                let var_name = name_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("Environment variable name must be string".to_string()))?;
+                
+                // Get environment variable
+                match std::env::var(var_name) {
+                    Ok(value) => Ok(Value::String(value)),
+                    Err(_) => Ok(Value::Null),
+                }
+            }
+            
+            AstNode::MemoryAlloc { size } => {
+                let sz = self.eval_node(size)?;
+                let size_num = sz.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Memory size must be number".to_string()))?;
+                
+                println!("Allocating {} bytes of memory", size_num);
+                
+                // Return memory object
+                let mut mem_obj = HashMap::new();
+                mem_obj.insert("type".to_string(), Value::String("memory".to_string()));
+                mem_obj.insert("size".to_string(), Value::Number(size_num));
+                Ok(Value::Object(mem_obj))
+            }
+            
+            AstNode::ExitProgram { code } => {
+                let exit_code = self.eval_node(code)?;
+                let code_num = exit_code.as_number()
+                    .unwrap_or(0.0) as i32;
+                
+                Err(AetherError::RuntimeError(format!("Program exited with code: {}", code_num)))
+            }
+            
+            AstNode::SendSignal { signal, target } => {
+                let sig = self.eval_node(signal)?;
+                let tgt = self.eval_node(target)?;
+                
+                println!("Sending signal {:?} to {:?}", sig, tgt);
+                Ok(Value::Boolean(true))
+            }
         }
     }
 
@@ -1040,6 +1342,109 @@ mod tests {
         
         // Internal variables should still work
         runtime.set_variable("_pipe".to_string(), Value::Number(1.0)).unwrap();
+    }
+    
+    // v1.3 Runtime Tests
+    
+    #[test]
+    fn test_runtime_file_handle() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::FileHandle {
+            path: Box::new(AstNode::Literal(LiteralValue::String("/tmp/test.txt".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        match result {
+            Value::Object(obj) => {
+                assert_eq!(obj.get("type"), Some(&Value::String("file".to_string())));
+                assert_eq!(obj.get("path"), Some(&Value::String("/tmp/test.txt".to_string())));
+            }
+            _ => panic!("Expected file object"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_shell_exec() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::ShellExec {
+            command: Box::new(AstNode::Literal(LiteralValue::String("ls -la".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        match result {
+            Value::String(s) => {
+                assert!(s.contains("Output of:"));
+            }
+            _ => panic!("Expected string output"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_env_var() {
+        let mut runtime = Runtime::new();
+        
+        // Set an environment variable for testing
+        std::env::set_var("AETHER_TEST_VAR", "test_value");
+        
+        let node = AstNode::EnvVar {
+            name: Box::new(AstNode::Literal(LiteralValue::String("AETHER_TEST_VAR".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::String("test_value".to_string()));
+        
+        // Clean up
+        std::env::remove_var("AETHER_TEST_VAR");
+    }
+    
+    #[test]
+    fn test_runtime_stream() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::CreateStream {
+            source: Box::new(AstNode::Literal(LiteralValue::String("data".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        match result {
+            Value::Object(obj) => {
+                assert_eq!(obj.get("type"), Some(&Value::String("stream".to_string())));
+            }
+            _ => panic!("Expected stream object"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_socket() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::CreateSocket {
+            socket_type: Box::new(AstNode::Literal(LiteralValue::String("TCP".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        match result {
+            Value::Object(obj) => {
+                assert_eq!(obj.get("type"), Some(&Value::String("socket".to_string())));
+                assert_eq!(obj.get("connected"), Some(&Value::Boolean(false)));
+            }
+            _ => panic!("Expected socket object"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_listen_port() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::ListenPort {
+            port: Box::new(AstNode::Literal(LiteralValue::Number(8080.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        match result {
+            Value::Object(obj) => {
+                assert_eq!(obj.get("type"), Some(&Value::String("listener".to_string())));
+                assert_eq!(obj.get("port"), Some(&Value::Number(8080.0)));
+            }
+            _ => panic!("Expected listener object"),
+        }
     }
     
     #[test]

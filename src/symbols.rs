@@ -162,6 +162,64 @@ pub enum Symbol {
     /// ∆ - Delta
     Delta,
     
+    // File System (v1.3)
+    /// 📄 - File handle/object
+    File,
+    /// 📂 - Directory/folder
+    Dir,
+    /// 📍 - Path resolution
+    Path,
+    /// 📖 - Read content from file or stream
+    Read,
+    /// 🖊️ - Write content (overwrite mode)
+    Write,
+    /// 🖇️ - Append content (append mode)
+    Append,
+    /// 🗑️ - Delete file or resource
+    Delete,
+    /// 🛂 - Permission control (chmod/chown)
+    Perm,
+    
+    // Streams & Buffers (v1.3)
+    /// 🌊 - Data stream (Readable/Writable Stream)
+    Stream,
+    /// 🧱 - Binary buffer (Bytes/Blob)
+    Buffer,
+    /// 🌬️ - Flush buffer
+    Flush,
+    /// 🔚 - End of file/stream marker
+    Eof,
+    /// ⏭️ - Skip bytes/move pointer
+    Skip,
+    
+    // Networking (v1.3)
+    /// 🔌 - Network socket (TCP/UDP)
+    Socket,
+    /// 👂 - Listen on port (Server Bind)
+    Listen,
+    /// 📞 - Initiate connection (Client Connect)
+    Connect,
+    /// 🚪 - Port number
+    Port,
+    /// 📦 - Data packet (Datagram)
+    Packet,
+    /// 🤝 - Protocol handshake/establish connection
+    Handshake,
+    
+    // Process & OS (v1.3)
+    /// ⚙️ - Process object
+    Process,
+    /// 🐚 - Execute shell command
+    Shell,
+    /// 🌍 - Environment variable (Get/Set)
+    Env,
+    /// 🐏 - Memory operations/manual allocation
+    Memory,
+    /// 👋 - Exit program (with exit code)
+    Exit,
+    /// 📶 - Send/capture system signal
+    Signal,
+    
     // Variables and identifiers
     /// Generic identifier
     Identifier(String),
@@ -253,6 +311,35 @@ impl Symbol {
             "≈" => Some(Symbol::Approx),
             "∞" => Some(Symbol::Infinity),
             "∆" => Some(Symbol::Delta),
+            // File System
+            "📄" => Some(Symbol::File),
+            "📂" => Some(Symbol::Dir),
+            "📍" => Some(Symbol::Path),
+            "📖" => Some(Symbol::Read),
+            "🖊️" => Some(Symbol::Write),
+            "🖇️" => Some(Symbol::Append),
+            "🗑️" => Some(Symbol::Delete),
+            "🛂" => Some(Symbol::Perm),
+            // Streams & Buffers
+            "🌊" => Some(Symbol::Stream),
+            "🧱" => Some(Symbol::Buffer),
+            "🌬️" => Some(Symbol::Flush),
+            "🔚" => Some(Symbol::Eof),
+            "⏭️" => Some(Symbol::Skip),
+            // Networking
+            "🔌" => Some(Symbol::Socket),
+            "👂" => Some(Symbol::Listen),
+            "📞" => Some(Symbol::Connect),
+            "🚪" => Some(Symbol::Port),
+            "📦" => Some(Symbol::Packet),
+            "🤝" => Some(Symbol::Handshake),
+            // Process & OS
+            "⚙️" => Some(Symbol::Process),
+            "🐚" => Some(Symbol::Shell),
+            "🌍" => Some(Symbol::Env),
+            "🐏" => Some(Symbol::Memory),
+            "👋" => Some(Symbol::Exit),
+            "📶" => Some(Symbol::Signal),
             _ => None,
         }
     }
@@ -331,6 +418,35 @@ impl Symbol {
             Symbol::Approx => "≈".to_string(),
             Symbol::Infinity => "∞".to_string(),
             Symbol::Delta => "∆".to_string(),
+            // File System
+            Symbol::File => "📄".to_string(),
+            Symbol::Dir => "📂".to_string(),
+            Symbol::Path => "📍".to_string(),
+            Symbol::Read => "📖".to_string(),
+            Symbol::Write => "🖊️".to_string(),
+            Symbol::Append => "🖇️".to_string(),
+            Symbol::Delete => "🗑️".to_string(),
+            Symbol::Perm => "🛂".to_string(),
+            // Streams & Buffers
+            Symbol::Stream => "🌊".to_string(),
+            Symbol::Buffer => "🧱".to_string(),
+            Symbol::Flush => "🌬️".to_string(),
+            Symbol::Eof => "🔚".to_string(),
+            Symbol::Skip => "⏭️".to_string(),
+            // Networking
+            Symbol::Socket => "🔌".to_string(),
+            Symbol::Listen => "👂".to_string(),
+            Symbol::Connect => "📞".to_string(),
+            Symbol::Port => "🚪".to_string(),
+            Symbol::Packet => "📦".to_string(),
+            Symbol::Handshake => "🤝".to_string(),
+            // Process & OS
+            Symbol::Process => "⚙️".to_string(),
+            Symbol::Shell => "🐚".to_string(),
+            Symbol::Env => "🌍".to_string(),
+            Symbol::Memory => "🐏".to_string(),
+            Symbol::Exit => "👋".to_string(),
+            Symbol::Signal => "📶".to_string(),
             Symbol::Identifier(id) => id.clone(),
             Symbol::StringLiteral(s) => format!("\"{}\"", s),
             Symbol::NumberLiteral(n) => n.to_string(),
@@ -413,6 +529,35 @@ impl Symbol {
             Symbol::Approx => "Approximate equality",
             Symbol::Infinity => "Infinity value",
             Symbol::Delta => "Change/difference value",
+            // File System
+            Symbol::File => "File handle/object",
+            Symbol::Dir => "Directory/folder",
+            Symbol::Path => "Path resolution",
+            Symbol::Read => "Read content from file or stream",
+            Symbol::Write => "Write content (overwrite mode)",
+            Symbol::Append => "Append content (append mode)",
+            Symbol::Delete => "Delete file or resource",
+            Symbol::Perm => "Permission control (chmod/chown)",
+            // Streams & Buffers
+            Symbol::Stream => "Data stream (Readable/Writable)",
+            Symbol::Buffer => "Binary buffer (Bytes/Blob)",
+            Symbol::Flush => "Flush buffer",
+            Symbol::Eof => "End of file/stream marker",
+            Symbol::Skip => "Skip bytes/move pointer",
+            // Networking
+            Symbol::Socket => "Network socket (TCP/UDP)",
+            Symbol::Listen => "Listen on port (Server Bind)",
+            Symbol::Connect => "Initiate connection (Client Connect)",
+            Symbol::Port => "Port number",
+            Symbol::Packet => "Data packet (Datagram)",
+            Symbol::Handshake => "Protocol handshake/establish connection",
+            // Process & OS
+            Symbol::Process => "Process object",
+            Symbol::Shell => "Execute shell command",
+            Symbol::Env => "Environment variable (Get/Set)",
+            Symbol::Memory => "Memory operations/manual allocation",
+            Symbol::Exit => "Exit program (with exit code)",
+            Symbol::Signal => "Send/capture system signal",
             Symbol::Identifier(_) => "Identifier",
             Symbol::StringLiteral(_) => "String literal",
             Symbol::NumberLiteral(_) => "Number literal",
@@ -585,5 +730,78 @@ mod tests {
         // Test parsing
         assert_eq!(Symbol::from_str("🛡️"), Some(Symbol::Verify));
         assert_eq!(Symbol::from_str("🛡"), Some(Symbol::Try));
+    }
+    
+    #[test]
+    fn test_file_system_symbols() {
+        let symbols = vec![
+            (Symbol::File, "📄", "File handle/object"),
+            (Symbol::Dir, "📂", "Directory/folder"),
+            (Symbol::Path, "📍", "Path resolution"),
+            (Symbol::Read, "📖", "Read content from file or stream"),
+            (Symbol::Write, "🖊️", "Write content (overwrite mode)"),
+            (Symbol::Append, "🖇️", "Append content (append mode)"),
+            (Symbol::Delete, "🗑️", "Delete file or resource"),
+            (Symbol::Perm, "🛂", "Permission control (chmod/chown)"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_streams_buffers_symbols() {
+        let symbols = vec![
+            (Symbol::Stream, "🌊", "Data stream (Readable/Writable)"),
+            (Symbol::Buffer, "🧱", "Binary buffer (Bytes/Blob)"),
+            (Symbol::Flush, "🌬️", "Flush buffer"),
+            (Symbol::Eof, "🔚", "End of file/stream marker"),
+            (Symbol::Skip, "⏭️", "Skip bytes/move pointer"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_networking_symbols() {
+        let symbols = vec![
+            (Symbol::Socket, "🔌", "Network socket (TCP/UDP)"),
+            (Symbol::Listen, "👂", "Listen on port (Server Bind)"),
+            (Symbol::Connect, "📞", "Initiate connection (Client Connect)"),
+            (Symbol::Port, "🚪", "Port number"),
+            (Symbol::Packet, "📦", "Data packet (Datagram)"),
+            (Symbol::Handshake, "🤝", "Protocol handshake/establish connection"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_process_os_symbols() {
+        let symbols = vec![
+            (Symbol::Process, "⚙️", "Process object"),
+            (Symbol::Shell, "🐚", "Execute shell command"),
+            (Symbol::Env, "🌍", "Environment variable (Get/Set)"),
+            (Symbol::Memory, "🐏", "Memory operations/manual allocation"),
+            (Symbol::Exit, "👋", "Exit program (with exit code)"),
+            (Symbol::Signal, "📶", "Send/capture system signal"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
     }
 }
