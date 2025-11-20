@@ -109,6 +109,46 @@ Aether v1.1 introduces **23 new symbols** across four major categories:
 ```
 *(70 characters vs 300+ in traditional JavaScript - 4.3x compression!)*
 
+## 🆕 What's New in v1.2
+
+Aether v1.2 introduces **15 new symbols** focused on testing, security, and scientific computing:
+
+### Testing & Debugging
+- `🧪` Test/Suite - Define test cases or test suites
+- `⚖️` Assert - Assertion/verification (throws error if false)
+- `🎭` Mock/Stub - Mock external dependencies
+- `⏱️` Benchmark - Measure execution time
+- `🐛` Debug - Debug mode/breakpoint
+
+### Security & Crypto
+- `🔐` Encrypt - Encrypt data with key
+- `🔓` Decrypt - Decrypt data
+- `#️⃣` Hash - Calculate hash value (SHA/MD5)
+- `✍️` Sign - Digital signature
+- `🛡️` Verify - Verify signature (distinct from 🛡 Try)
+
+### Math & Science
+- `↑` Power - Power operation (e.g., 2↑3 = 8)
+- `√` Root - Square root
+- `≈` Approx - Approximate equality
+- `∞` Infinity - Infinity value
+- `∆` Delta - Change/difference value
+
+**Example - Secure Password Storage:**
+```aether
+ƒ®: 📥pass ▷ p ⨠ 🎲 ▷ salt ⨠ (p 🔗 salt) ⇢ #️⃣ ▷ hash ⨠ 💾{h:hash, s:salt} ⨠ 📤✓
+```
+
+**Example - Unit Testing:**
+```aether
+🧪 "AuthTest": 🎭💾 ⨠ ⏱️("admin" ⇢ ® ▷ res) ▷ time ⨠ ⚖️(res ≡ 200) ⨠ ⚖️(time < 50ms)
+```
+
+**Example - Vector Distance:**
+```aether
+ƒ calc: 📥v1 📥v2 ⨠ ((v1 - v2)↑2) ⇢ √ ▷ dist ⨠ ◇(dist ≈ 0) 📤"Same"
+```
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -250,6 +290,7 @@ cargo test test_lexer_basic_symbols
 - [x] Symbol system
 - [x] CLI interface
 - [x] **v1.1: Extended symbol system** (Control Flow, Async, Data Manipulation, System)
+- [x] **v1.2: Testing, Security & Math symbols** (Testing/Debugging, Security/Crypto, Math/Science)
 - [ ] Full runtime with I/O
 - [ ] Database connectors
 - [ ] HTTP client/server

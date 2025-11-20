@@ -126,6 +126,42 @@ pub enum Symbol {
     /// 🪵 - Log
     Log,
     
+    // Testing & Debugging (v1.2)
+    /// 🧪 - Test/Suite
+    Test,
+    /// ⚖️ - Assert
+    Assert,
+    /// 🎭 - Mock/Stub
+    Mock,
+    /// ⏱️ - Benchmark
+    Benchmark,
+    /// 🐛 - Debug
+    Debug,
+    
+    // Security & Crypto (v1.2)
+    /// 🔐 - Encrypt
+    Encrypt,
+    /// 🔓 - Decrypt
+    Decrypt,
+    /// #️⃣ - Hash
+    Hash,
+    /// ✍️ - Sign
+    Sign,
+    /// 🛡️ - Verify (different from 🛡 Try)
+    Verify,
+    
+    // Math & Science (v1.2)
+    /// ↑ - Power
+    Power,
+    /// √ - Root
+    Root,
+    /// ≈ - Approx
+    Approx,
+    /// ∞ - Infinity
+    Infinity,
+    /// ∆ - Delta
+    Delta,
+    
     // Variables and identifiers
     /// Generic identifier
     Identifier(String),
@@ -199,6 +235,24 @@ impl Symbol {
             "📅" => Some(Symbol::DateTime),
             "🎲" => Some(Symbol::Random),
             "🪵" => Some(Symbol::Log),
+            // Testing & Debugging
+            "🧪" => Some(Symbol::Test),
+            "⚖️" => Some(Symbol::Assert),
+            "🎭" => Some(Symbol::Mock),
+            "⏱️" => Some(Symbol::Benchmark),
+            "🐛" => Some(Symbol::Debug),
+            // Security & Crypto
+            "🔐" => Some(Symbol::Encrypt),
+            "🔓" => Some(Symbol::Decrypt),
+            "#️⃣" => Some(Symbol::Hash),
+            "✍️" => Some(Symbol::Sign),
+            "🛡️" => Some(Symbol::Verify),
+            // Math & Science
+            "↑" => Some(Symbol::Power),
+            "√" => Some(Symbol::Root),
+            "≈" => Some(Symbol::Approx),
+            "∞" => Some(Symbol::Infinity),
+            "∆" => Some(Symbol::Delta),
             _ => None,
         }
     }
@@ -259,6 +313,24 @@ impl Symbol {
             Symbol::DateTime => "📅".to_string(),
             Symbol::Random => "🎲".to_string(),
             Symbol::Log => "🪵".to_string(),
+            // Testing & Debugging
+            Symbol::Test => "🧪".to_string(),
+            Symbol::Assert => "⚖️".to_string(),
+            Symbol::Mock => "🎭".to_string(),
+            Symbol::Benchmark => "⏱️".to_string(),
+            Symbol::Debug => "🐛".to_string(),
+            // Security & Crypto
+            Symbol::Encrypt => "🔐".to_string(),
+            Symbol::Decrypt => "🔓".to_string(),
+            Symbol::Hash => "#️⃣".to_string(),
+            Symbol::Sign => "✍️".to_string(),
+            Symbol::Verify => "🛡️".to_string(),
+            // Math & Science
+            Symbol::Power => "↑".to_string(),
+            Symbol::Root => "√".to_string(),
+            Symbol::Approx => "≈".to_string(),
+            Symbol::Infinity => "∞".to_string(),
+            Symbol::Delta => "∆".to_string(),
             Symbol::Identifier(id) => id.clone(),
             Symbol::StringLiteral(s) => format!("\"{}\"", s),
             Symbol::NumberLiteral(n) => n.to_string(),
@@ -323,6 +395,24 @@ impl Symbol {
             Symbol::DateTime => "Date/Time operations",
             Symbol::Random => "Random number generation",
             Symbol::Log => "Log message",
+            // Testing & Debugging
+            Symbol::Test => "Test case/suite definition",
+            Symbol::Assert => "Assert condition (fail if false)",
+            Symbol::Mock => "Mock external dependencies",
+            Symbol::Benchmark => "Measure execution time",
+            Symbol::Debug => "Debug mode/breakpoint",
+            // Security & Crypto
+            Symbol::Encrypt => "Encrypt data",
+            Symbol::Decrypt => "Decrypt data",
+            Symbol::Hash => "Calculate hash value",
+            Symbol::Sign => "Digital signature",
+            Symbol::Verify => "Verify signature",
+            // Math & Science
+            Symbol::Power => "Power operation (exponentiation)",
+            Symbol::Root => "Square root",
+            Symbol::Approx => "Approximate equality",
+            Symbol::Infinity => "Infinity value",
+            Symbol::Delta => "Change/difference value",
             Symbol::Identifier(_) => "Identifier",
             Symbol::StringLiteral(_) => "String literal",
             Symbol::NumberLiteral(_) => "Number literal",
@@ -432,5 +522,68 @@ mod tests {
         assert_eq!(Symbol::Async.description(), "Async execution/Trigger");
         assert_eq!(Symbol::Split.description(), "Split/Slice string or array");
         assert_eq!(Symbol::Import.description(), "Import module/dependency");
+    }
+    
+    #[test]
+    fn test_testing_debugging_symbols() {
+        let symbols = vec![
+            (Symbol::Test, "🧪", "Test case/suite definition"),
+            (Symbol::Assert, "⚖️", "Assert condition (fail if false)"),
+            (Symbol::Mock, "🎭", "Mock external dependencies"),
+            (Symbol::Benchmark, "⏱️", "Measure execution time"),
+            (Symbol::Debug, "🐛", "Debug mode/breakpoint"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_security_crypto_symbols() {
+        let symbols = vec![
+            (Symbol::Encrypt, "🔐", "Encrypt data"),
+            (Symbol::Decrypt, "🔓", "Decrypt data"),
+            (Symbol::Hash, "#️⃣", "Calculate hash value"),
+            (Symbol::Sign, "✍️", "Digital signature"),
+            (Symbol::Verify, "🛡️", "Verify signature"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_math_science_symbols() {
+        let symbols = vec![
+            (Symbol::Power, "↑", "Power operation (exponentiation)"),
+            (Symbol::Root, "√", "Square root"),
+            (Symbol::Approx, "≈", "Approximate equality"),
+            (Symbol::Infinity, "∞", "Infinity value"),
+            (Symbol::Delta, "∆", "Change/difference value"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_verify_vs_try_distinction() {
+        // Ensure 🛡️ (Verify) is different from 🛡 (Try)
+        assert_ne!(Symbol::Verify.to_str(), Symbol::Try.to_str());
+        assert_eq!(Symbol::Verify.to_str(), "🛡️");
+        assert_eq!(Symbol::Try.to_str(), "🛡");
+        
+        // Test parsing
+        assert_eq!(Symbol::from_str("🛡️"), Some(Symbol::Verify));
+        assert_eq!(Symbol::from_str("🛡"), Some(Symbol::Try));
     }
 }
