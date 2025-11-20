@@ -1,0 +1,26 @@
+[package]
+name = "aether"
+version = "0.1.0"
+edition = "2021"
+authors = ["Aether Contributors"]
+description = "Aether (以太) - The First AI-Native Programming Language"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/driftcell/Aether"
+keywords = ["ai", "programming-language", "compiler", "utf8", "glyphcode"]
+categories = ["compilers", "parser-implementations"]
+
+[dependencies]
+# Core dependencies for the language implementation
+unicode-segmentation = "1.12"
+thiserror = "2.0"
+
+[dev-dependencies]
+# Testing utilities
+
+[lib]
+name = "aether"
+path = "src/lib.rs"
+
+[[bin]]
+name = "aether"
+path = "src/main.rs"
