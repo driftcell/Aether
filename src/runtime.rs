@@ -2,7 +2,10 @@
 
 use crate::error::{AetherError, Result};
 use crate::parser::{AstNode, LiteralValue};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use chrono::Utc;
+use rand::Rng;
+use regex::Regex;
 
 /// Runtime value
 #[derive(Debug, Clone, PartialEq)]
@@ -33,11 +36,24 @@ impl Value {
     pub fn is_null(&self) -> bool {
         matches!(self, Value::Null)
     }
+    
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Value::Null => false,
+            Value::Boolean(b) => *b,
+            Value::Number(n) => *n != 0.0,
+            Value::String(s) => !s.is_empty(),
+            Value::Array(a) => !a.is_empty(),
+            Value::Object(o) => !o.is_empty(),
+        }
+    }
 }
 
 /// Runtime environment for executing Aether programs
 pub struct Runtime {
     variables: HashMap<String, Value>,
+    immutable_vars: HashSet<String>,
+    max_loop_iterations: usize,
 }
 
 impl Runtime {
@@ -45,7 +61,14 @@ impl Runtime {
     pub fn new() -> Self {
         Runtime {
             variables: HashMap::new(),
+            immutable_vars: HashSet::new(),
+            max_loop_iterations: 10000,
         }
+    }
+    
+    /// Set maximum loop iterations (for safety)
+    pub fn set_max_loop_iterations(&mut self, max: usize) {
+        self.max_loop_iterations = max;
     }
 
     /// Execute an AST and return the result
@@ -97,6 +120,12 @@ impl Runtime {
 
             AstNode::PipeInto { value, variable } => {
                 let val = self.eval_node(value)?;
+                // Check immutability before assignment
+                if self.immutable_vars.contains(variable) {
+                    return Err(AetherError::RuntimeError(
+                        format!("Cannot modify immutable variable: {}", variable)
+                    ));
+                }
                 self.variables.insert(variable.clone(), val.clone());
                 Ok(val)
             }
@@ -148,9 +177,28 @@ impl Runtime {
             
             // Control Flow & Iteration
             AstNode::Loop { body } => {
-                // Simplified: run loop once for demonstration
-                println!("Loop execution (simplified)");
-                self.eval_node(body)
+                // Execute loop with safety limit
+                let mut iterations = 0;
+                let mut last_value = Value::Null;
+                
+                loop {
+                    if iterations >= self.max_loop_iterations {
+                        return Err(AetherError::RuntimeError(
+                            format!("Loop exceeded maximum iterations ({})", self.max_loop_iterations)
+                        ));
+                    }
+                    
+                    last_value = self.eval_node(body)?;
+                    
+                    // Check for break condition (if result is Null or false, break)
+                    if !last_value.is_truthy() {
+                        break;
+                    }
+                    
+                    iterations += 1;
+                }
+                
+                Ok(last_value)
             }
             
             AstNode::ForEach { variable, collection, body } => {
@@ -181,13 +229,13 @@ impl Runtime {
                     for item in items {
                         self.variables.insert("_item".to_string(), item.clone());
                         let result = self.eval_node(predicate)?;
-                        if !result.is_null() {
+                        // Include item if predicate is truthy
+                        if result.is_truthy() {
                             filtered.push(item);
                         }
                     }
                     Ok(Value::Array(filtered))
                 } else {
-                    println!("Filter: no array to filter");
                     Ok(Value::Null)
                 }
             }
@@ -227,8 +275,11 @@ impl Runtime {
                     match self.eval_node(body) {
                         Ok(val) => return Ok(val),
                         Err(e) => {
-                            println!("Retry attempt {} failed", i + 1);
                             last_error = Some(e);
+                            // Only log on intermediate failures, not the last one
+                            if i < attempts - 1 {
+                                eprintln!("Retry attempt {} failed, retrying...", i + 1);
+                            }
                         }
                     }
                 }
@@ -238,23 +289,44 @@ impl Runtime {
             
             // Concurrency & Async
             AstNode::Async { body } => {
-                println!("Async execution (simplified)");
-                self.eval_node(body)
+                // In a real implementation, this would spawn an async task
+                // For now, we execute synchronously but mark it as async context
+                self.variables.insert("_async_context".to_string(), Value::Boolean(true));
+                let result = self.eval_node(body)?;
+                self.variables.remove("_async_context");
+                Ok(result)
             }
             
             AstNode::Await { expression } => {
-                println!("Await (simplified)");
+                // Check if we're in async context
+                let in_async = self.variables.get("_async_context")
+                    .and_then(|v| if let Value::Boolean(b) = v { Some(*b) } else { None })
+                    .unwrap_or(false);
+                
+                if !in_async {
+                    eprintln!("Warning: Await used outside async context");
+                }
+                
+                // Execute the expression (in real impl, this would await a future)
                 self.eval_node(expression)
             }
             
             AstNode::Thread { body } => {
-                println!("Thread execution (simplified)");
-                self.eval_node(body)
+                // In a real implementation, this would spawn a thread
+                // For now, execute in current thread with thread context marker
+                self.variables.insert("_thread_context".to_string(), Value::Boolean(true));
+                let result = self.eval_node(body)?;
+                self.variables.remove("_thread_context");
+                Ok(result)
             }
             
             AstNode::Lock { body } => {
-                println!("Lock critical section (simplified)");
-                self.eval_node(body)
+                // In a real implementation, this would acquire a mutex
+                // For now, mark critical section and execute
+                self.variables.insert("_lock_acquired".to_string(), Value::Boolean(true));
+                let result = self.eval_node(body)?;
+                self.variables.remove("_lock_acquired");
+                Ok(result)
             }
             
             AstNode::Emit { event } => {
@@ -323,14 +395,30 @@ impl Runtime {
             }
             
             AstNode::RegexMatch { pattern, target } => {
-                let _pat = self.eval_node(pattern)?;
-                let _tgt = if matches!(target.as_ref(), AstNode::Empty) {
+                let pat = self.eval_node(pattern)?;
+                let tgt = if matches!(target.as_ref(), AstNode::Empty) {
                     self.variables.get("_pipe").cloned().unwrap_or(Value::Null)
                 } else {
                     self.eval_node(target)?
                 };
-                println!("Regex match (simplified)");
-                Ok(Value::Boolean(true))
+                
+                // Extract pattern string
+                let pattern_str = match pat {
+                    Value::String(s) => s,
+                    _ => return Ok(Value::Boolean(false)),
+                };
+                
+                // Extract target string
+                let target_str = match tgt {
+                    Value::String(s) => s,
+                    _ => return Ok(Value::Boolean(false)),
+                };
+                
+                // Perform regex match
+                match Regex::new(&pattern_str) {
+                    Ok(re) => Ok(Value::Boolean(re.is_match(&target_str))),
+                    Err(e) => Err(AetherError::RuntimeError(format!("Invalid regex pattern: {}", e))),
+                }
             }
             
             AstNode::Equal { left, right } => {
@@ -354,32 +442,45 @@ impl Runtime {
             }
             
             AstNode::Immutable { name, value } => {
+                // Check if variable is already immutable
+                if self.immutable_vars.contains(name) {
+                    return Err(AetherError::RuntimeError(
+                        format!("Cannot redefine immutable variable: {}", name)
+                    ));
+                }
+                
                 let val = self.eval_node(value)?;
-                println!("Define immutable {}: {:?}", name, val);
                 self.variables.insert(name.clone(), val.clone());
+                self.immutable_vars.insert(name.clone());
                 Ok(val)
             }
             
             // System & Environment
             AstNode::Import { module } => {
-                println!("Import module: {}", module);
+                // Mark module as imported in runtime context
+                let import_key = format!("_imported_{}", module);
+                self.variables.insert(import_key, Value::Boolean(true));
                 Ok(Value::Boolean(true))
             }
             
             AstNode::Auth { token } => {
                 let tok = self.eval_node(token)?;
-                println!("Authenticate with token: {:?}", tok);
+                // Store auth token in runtime context
+                self.variables.insert("_auth_token".to_string(), tok);
                 Ok(Value::Boolean(true))
             }
             
             AstNode::DateTime => {
-                println!("Get current date/time");
-                Ok(Value::String("2025-11-20T08:32:24Z".to_string()))
+                // Return actual current time in ISO 8601 format
+                let now = Utc::now();
+                Ok(Value::String(now.to_rfc3339()))
             }
             
             AstNode::Random => {
-                println!("Generate random number");
-                Ok(Value::Number(0.5))
+                // Generate actual random number between 0 and 1
+                let mut rng = rand::thread_rng();
+                let random_value: f64 = rng.gen();
+                Ok(Value::Number(random_value))
             }
             
             AstNode::Log { message } => {
@@ -397,13 +498,25 @@ impl Runtime {
     }
 
     /// Set a variable in the runtime environment
-    pub fn set_variable(&mut self, name: String, value: Value) {
+    pub fn set_variable(&mut self, name: String, value: Value) -> Result<()> {
+        // Check if variable is immutable (but allow internal _ prefixed vars)
+        if !name.starts_with('_') && self.immutable_vars.contains(&name) {
+            return Err(AetherError::RuntimeError(
+                format!("Cannot modify immutable variable: {}", name)
+            ));
+        }
         self.variables.insert(name, value);
+        Ok(())
     }
 
     /// Get a variable from the runtime environment
     pub fn get_variable(&self, name: &str) -> Option<&Value> {
         self.variables.get(name)
+    }
+    
+    /// Check if a variable is immutable
+    pub fn is_immutable(&self, name: &str) -> bool {
+        self.immutable_vars.contains(name)
     }
 }
 
@@ -429,7 +542,7 @@ mod tests {
     #[test]
     fn test_runtime_variable() {
         let mut runtime = Runtime::new();
-        runtime.set_variable("x".to_string(), Value::Number(10.0));
+        runtime.set_variable("x".to_string(), Value::Number(10.0)).unwrap();
 
         let node = AstNode::Variable("x".to_string());
         let result = runtime.eval_node(&node).unwrap();
@@ -467,7 +580,7 @@ mod tests {
     #[test]
     fn test_runtime_split() {
         let mut runtime = Runtime::new();
-        runtime.set_variable("_pipe".to_string(), Value::String("a,b,c".to_string()));
+        runtime.set_variable("_pipe".to_string(), Value::String("a,b,c".to_string())).unwrap();
         
         let node = AstNode::Split {
             target: Box::new(AstNode::Empty),
@@ -490,7 +603,7 @@ mod tests {
             Value::Number(3.0),
         ];
         
-        runtime.set_variable("_pipe".to_string(), Value::Array(items));
+        runtime.set_variable("_pipe".to_string(), Value::Array(items)).unwrap();
         // Execute ForEach by setting collection to Empty and using _pipe
         let node = AstNode::ForEach {
             variable: "x".to_string(),
@@ -504,7 +617,6 @@ mod tests {
             _ => panic!("Expected array"),
         }
     }
-    
     #[test]
     fn test_runtime_retry() {
         let mut runtime = Runtime::new();
@@ -554,7 +666,7 @@ mod tests {
     #[test]
     fn test_runtime_equal() {
         let mut runtime = Runtime::new();
-        runtime.set_variable("_pipe".to_string(), Value::Number(42.0));
+        runtime.set_variable("_pipe".to_string(), Value::Number(42.0)).unwrap();
         
         let node = AstNode::Equal {
             left: Box::new(AstNode::Empty),
@@ -575,5 +687,100 @@ mod tests {
             Value::String(_) => {},
             _ => panic!("Expected string timestamp"),
         }
+    }
+    
+    #[test]
+    fn test_runtime_immutable() {
+        let mut runtime = Runtime::new();
+        
+        // Define immutable variable
+        let node = AstNode::Immutable {
+            name: "PI".to_string(),
+            value: Box::new(AstNode::Literal(LiteralValue::Number(3.14159))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(3.14159));
+        
+        // Try to modify it - should fail
+        let set_result = runtime.set_variable("PI".to_string(), Value::Number(3.0));
+        assert!(set_result.is_err());
+        
+        // Internal variables should still work
+        runtime.set_variable("_pipe".to_string(), Value::Number(1.0)).unwrap();
+    }
+    
+    #[test]
+    fn test_runtime_random() {
+        let mut runtime = Runtime::new();
+        let node = AstNode::Random;
+        
+        let result1 = runtime.eval_node(&node).unwrap();
+        let result2 = runtime.eval_node(&node).unwrap();
+        
+        // Both should be numbers
+        assert!(matches!(result1, Value::Number(_)));
+        assert!(matches!(result2, Value::Number(_)));
+        
+        // They should (very likely) be different
+        if let (Value::Number(n1), Value::Number(n2)) = (result1, result2) {
+            // With very high probability they're different, but we can't guarantee it
+            // So just check they're in valid range
+            assert!(n1 >= 0.0 && n1 <= 1.0);
+            assert!(n2 >= 0.0 && n2 <= 1.0);
+        }
+    }
+    
+    #[test]
+    fn test_runtime_regex_match() {
+        let mut runtime = Runtime::new();
+        runtime.set_variable("_pipe".to_string(), Value::String("test@example.com".to_string())).unwrap();
+        
+        let node = AstNode::RegexMatch {
+            pattern: Box::new(AstNode::Literal(LiteralValue::String(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()))),
+            target: Box::new(AstNode::Empty),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+        
+        // Test non-matching
+        runtime.set_variable("_pipe".to_string(), Value::String("not-an-email".to_string())).unwrap();
+        let result2 = runtime.eval_node(&node).unwrap();
+        assert_eq!(result2, Value::Boolean(false));
+    }
+    
+    #[test]
+    fn test_runtime_loop() {
+        let mut runtime = Runtime::new();
+        runtime.set_max_loop_iterations(5);
+        
+        // Loop that breaks after a few iterations
+        // We'll use a counter pattern
+        runtime.set_variable("counter".to_string(), Value::Number(0.0)).unwrap();
+        
+        // Simple loop that returns null (falsy) immediately
+        let node = AstNode::Loop {
+            body: Box::new(AstNode::Literal(LiteralValue::Number(0.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(0.0));
+    }
+    
+    #[test]
+    fn test_runtime_import() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Import {
+            module: "http".to_string(),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+        
+        // Check that the import is recorded
+        let import_key = "_imported_http";
+        assert_eq!(runtime.get_variable(import_key), Some(&Value::Boolean(true)));
     }
 }
