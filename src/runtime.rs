@@ -200,8 +200,20 @@ impl Runtime {
 
             AstNode::Empty => Ok(Value::Null),
             
+            AstNode::IfThen { condition, then_branch, else_branch } => {
+                let cond_value = self.eval_node(condition)?;
+                
+                if cond_value.is_truthy() {
+                    self.eval_node(then_branch)
+                } else if let Some(else_node) = else_branch {
+                    self.eval_node(else_node)
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            
             // Control Flow & Iteration
-            AstNode::Loop { body } => {
+            AstNode::Loop { condition, body } => {
                 // Execute loop with safety limit
                 let mut iterations = 0;
                 let mut last_value = Value::Null;
@@ -213,10 +225,18 @@ impl Runtime {
                         ));
                     }
                     
+                    // Check condition if present
+                    if let Some(cond) = condition {
+                        let cond_value = self.eval_node(cond)?;
+                        if !cond_value.is_truthy() {
+                            break;
+                        }
+                    }
+                    
                     last_value = self.eval_node(body)?;
                     
-                    // Check for break condition (if result is Null or false, break)
-                    if !last_value.is_truthy() {
+                    // If no condition, check if result is falsy to break
+                    if condition.is_none() && !last_value.is_truthy() {
                         break;
                     }
                     

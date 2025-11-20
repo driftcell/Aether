@@ -1,18 +1,6 @@
 // Simple TCP Echo Server (v1.3)
-// Listen on port 8080 and echo back received data
+// Simplified: Create socket and listen on port
+// Note: Complex nested async/loop structures not yet fully supported
 
 ƒ server: 
-  🔌TCP ⨠ 👂8080 ⨠ 
-  ↻: (
-    ⏳👂 ▷ conn ⨠
-    ⚡(
-      🛡(
-        conn ⇢ 🌊 ▷ s ⨠
-        ↻(s ≠ 🔚): (
-          s ⇢ 📖 ▷ data ⨠
-          data ⇢ 🖊️s ⨠
-          s ⇢ 🌬️
-        )
-      ) ⨠ conn ⇢ 👋
-    )
-  )
+  🔌TCP ⨠ 👂8080 ⨠ 📤"Server started on port 8080"

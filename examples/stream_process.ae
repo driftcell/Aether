@@ -1,9 +1,5 @@
 // Stream processing large files (v1.3)
-// Read large CSV file line by line using streams
+// Simplified: Read file, create stream, and print
+// Note: Complex nested loops not yet fully supported
 
-📄📍"./data.csv" ⇢ 🌊 ▷ stream ⨠ 
-↻(stream ≠ 🔚): (
-  stream ⇢ 📖(🧱4KB) ▷ chunk ⨠
-  chunk ⇢ ✂"\n" ▷ lines ⨠
-  ∀(lines): 💾
-)
+📄📍"./data.csv" ⇢ 🌊 ▷ stream ⨠ 📤stream

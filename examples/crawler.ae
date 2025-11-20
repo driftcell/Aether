@@ -1,1 +1,3 @@
-🧩🌐 ⨠ 🗂urls ▷ ∀(u): (⚡ 🛡(♻3: 🌐📥u)) ▷ res ⁇ 🛑 ⨠ ∃(res.ok) ▷ 💾
+// Simplified web crawler example
+// Import HTTP module and retry request
+🧩🌐 ⨠ ♻3: 🌐📥"https://example.com" ▷ res ⨠ 💾res

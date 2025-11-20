@@ -58,9 +58,17 @@ pub enum AstNode {
     /// Empty/null
     Empty,
     
+    /// If conditional: condition, then_branch, optional else_branch
+    IfThen {
+        condition: Box<AstNode>,
+        then_branch: Box<AstNode>,
+        else_branch: Option<Box<AstNode>>,
+    },
+    
     // Control Flow & Iteration (v1.1)
-    /// Loop: body
+    /// Loop: optional condition, body
     Loop {
+        condition: Option<Box<AstNode>>,
         body: Box<AstNode>,
     },
     
@@ -548,22 +556,44 @@ impl Parser {
             }
         }
         
-        // Handle comparison operators
+        // Handle comparison and equality operators
         if let Some(token) = self.peek() {
-            let op = match &token.token_type {
-                TokenType::GreaterThan => Some(ComparisonOp::GreaterThan),
-                TokenType::LessThan => Some(ComparisonOp::LessThan),
-                _ => None,
-            };
-            
-            if let Some(operator) = op {
-                self.advance();
-                let right = self.parse_primary()?;
-                expr = AstNode::Comparison {
-                    left: Box::new(expr),
-                    operator,
-                    right: Box::new(right),
-                };
+            match &token.token_type {
+                TokenType::GreaterThan => {
+                    self.advance();
+                    let right = self.parse_primary()?;
+                    expr = AstNode::Comparison {
+                        left: Box::new(expr),
+                        operator: ComparisonOp::GreaterThan,
+                        right: Box::new(right),
+                    };
+                }
+                TokenType::LessThan => {
+                    self.advance();
+                    let right = self.parse_primary()?;
+                    expr = AstNode::Comparison {
+                        left: Box::new(expr),
+                        operator: ComparisonOp::LessThan,
+                        right: Box::new(right),
+                    };
+                }
+                TokenType::Symbol(Symbol::Equal) => {
+                    self.advance();
+                    let right = self.parse_primary()?;
+                    expr = AstNode::Equal {
+                        left: Box::new(expr),
+                        right: Box::new(right),
+                    };
+                }
+                TokenType::Symbol(Symbol::NotEqual) => {
+                    self.advance();
+                    let right = self.parse_primary()?;
+                    expr = AstNode::NotEqual {
+                        left: Box::new(expr),
+                        right: Box::new(right),
+                    };
+                }
+                _ => {}
             }
         }
 
@@ -681,19 +711,87 @@ impl Parser {
                     self.advance();
                     Ok(AstNode::Empty)
                 }
+                // If conditional
+                TokenType::Symbol(Symbol::If) => {
+                    self.advance();
+                    // Expect opening parenthesis for condition
+                    if !self.match_token_type(&TokenType::LeftParen) {
+                        return Err(AetherError::ParserError(
+                            "Expected '(' after ◇".to_string(),
+                        ));
+                    }
+                    let condition = self.parse_expression()?;
+                    if !self.match_token_type(&TokenType::RightParen) {
+                        return Err(AetherError::ParserError(
+                            "Expected ')' after condition".to_string(),
+                        ));
+                    }
+                    // Expect colon
+                    if !self.match_token_type(&TokenType::Colon) {
+                        return Err(AetherError::ParserError(
+                            "Expected ':' after condition".to_string(),
+                        ));
+                    }
+                    // Parse then branch (could be parenthesized)
+                    let then_branch = self.parse_primary()?;
+                    // TODO: handle else branch in the future
+                    Ok(AstNode::IfThen {
+                        condition: Box::new(condition),
+                        then_branch: Box::new(then_branch),
+                        else_branch: None,
+                    })
+                }
                 // Control Flow & Iteration
                 TokenType::Symbol(Symbol::Loop) => {
                     self.advance();
+                    
+                    // Check if there's a condition in parentheses
+                    let condition = if self.match_token_type(&TokenType::LeftParen) {
+                        let cond = self.parse_expression()?;
+                        if !self.match_token_type(&TokenType::RightParen) {
+                            return Err(AetherError::ParserError(
+                                "Expected ')' after loop condition".to_string(),
+                            ));
+                        }
+                        // Optionally consume colon after condition
+                        self.match_token_type(&TokenType::Colon);
+                        Some(Box::new(cond))
+                    } else {
+                        None
+                    };
+                    
                     let body = self.parse_primary()?;
                     Ok(AstNode::Loop {
+                        condition,
                         body: Box::new(body),
                     })
                 }
                 TokenType::Symbol(Symbol::ForEach) => {
                     self.advance();
-                    // Expect pattern: ∀(variable): body
-                    // For simplicity: read next identifier as variable, then body
-                    let variable = if let Some(token) = self.peek() {
+                    // Expect pattern: ∀(variable): body or ∀variable: body
+                    
+                    let variable = if self.match_token_type(&TokenType::LeftParen) {
+                        // Handle ∀(variable):
+                        if let Some(token) = self.peek() {
+                            let id = match &token.token_type {
+                                TokenType::Symbol(Symbol::Identifier(id)) => {
+                                    let id_val = id.clone();
+                                    self.advance();
+                                    id_val
+                                }
+                                _ => "it".to_string(),
+                            };
+                            if !self.match_token_type(&TokenType::RightParen) {
+                                return Err(AetherError::ParserError(
+                                    "Expected ')' after foreach variable".to_string(),
+                                ));
+                            }
+                            id
+                        } else {
+                            "it".to_string()
+                        }
+                    } else if let Some(token) = self.peek() {
+                        // Handle ∀variable:
                         match &token.token_type {
                             TokenType::Symbol(Symbol::Identifier(id)) => {
                                 let id = id.clone();
