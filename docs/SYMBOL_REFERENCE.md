@@ -17,7 +17,11 @@ Complete reference for all symbols in the Aether programming language.
 11. [Testing & Debugging (v1.2)](#testing--debugging-v12)
 12. [Security & Crypto (v1.2)](#security--crypto-v12)
 13. [Math & Science (v1.2)](#math--science-v12)
-14. [Complete Examples](#complete-example)
+14. [File System (v1.3)](#file-system-v13)
+15. [Streams & Buffers (v1.3)](#streams--buffers-v13)
+16. [Networking (v1.3)](#networking-v13)
+17. [Process & OS (v1.3)](#process--os-v13)
+18. [Complete Examples](#complete-example)
 
 ## Function & Control Flow
 
@@ -1422,6 +1426,676 @@ function calc(v1, v2) {
 
 ---
 
+## File System (v1.3)
+
+### 📄 - File
+
+**Symbol**: `📄` (File Emoji)  
+**Unicode**: U+1F4C4  
+**Purpose**: File handle/object representation
+
+**Syntax**:
+```aether
+📄📍"path"
+```
+
+**Example**:
+```aether
+📄📍"/var/log/app.log" ▷ f
+```
+Create file handle for the specified path
+
+---
+
+### 📂 - Dir
+
+**Symbol**: `📂` (Folder Emoji)  
+**Unicode**: U+1F4C2  
+**Purpose**: Directory/folder representation
+
+**Syntax**:
+```aether
+📂📍"path"
+```
+
+**Example**:
+```aether
+📂📍"/tmp" ▷ dir
+```
+Create directory handle
+
+---
+
+### 📍 - Path
+
+**Symbol**: `📍` (Round Pushpin Emoji)  
+**Unicode**: U+1F4CD  
+**Purpose**: Path resolution and manipulation
+
+**Syntax**:
+```aether
+📍"path/to/resource"
+```
+
+**Example**:
+```aether
+📍"/etc/config.json" ▷ path
+```
+Resolve and validate path
+
+---
+
+### 📖 - Read
+
+**Symbol**: `📖` (Open Book Emoji)  
+**Unicode**: U+1F4D6  
+**Purpose**: Read content from file or stream
+
+**Syntax**:
+```aether
+source ⇢ 📖
+```
+
+**Example**:
+```aether
+📄📍"data.txt" ⇢ 📖 ▷ content
+```
+Read content from file
+
+---
+
+### 🖊️ - Write
+
+**Symbol**: `🖊️` (Pen Emoji)  
+**Unicode**: U+1F58A + U+FE0F  
+**Purpose**: Write content to file (overwrite mode)
+
+**Syntax**:
+```aether
+content ⇢ 🖊️target
+```
+
+**Example**:
+```aether
+"Hello World" ⇢ 🖊️📄📍"output.txt"
+```
+Write string to file, overwriting existing content
+
+---
+
+### 🖇️ - Append
+
+**Symbol**: `🖇️` (Linked Paperclips Emoji)  
+**Unicode**: U+1F587 + U+FE0F  
+**Purpose**: Append content to file
+
+**Syntax**:
+```aether
+content ⇢ 🖇️target
+```
+
+**Example**:
+```aether
+"New log entry" ⇢ 🖇️📄📍"app.log"
+```
+Append content to existing file
+
+---
+
+### 🗑️ - Delete
+
+**Symbol**: `🗑️` (Wastebasket Emoji)  
+**Unicode**: U+1F5D1 + U+FE0F  
+**Purpose**: Delete file or resource
+
+**Syntax**:
+```aether
+🗑️target
+```
+
+**Example**:
+```aether
+🗑️📄📍"temp.txt"
+```
+Delete specified file
+
+---
+
+### 🛂 - Perm
+
+**Symbol**: `🛂` (Passport Control Emoji)  
+**Unicode**: U+1F6C2  
+**Purpose**: Permission control (chmod/chown equivalent)
+
+**Syntax**:
+```aether
+🛂(target, permission)
+```
+
+**Example**:
+```aether
+🛂(📄📍"script.sh", 755)
+```
+Set file permissions
+
+---
+
+## Streams & Buffers (v1.3)
+
+### 🌊 - Stream
+
+**Symbol**: `🌊` (Water Wave Emoji)  
+**Unicode**: U+1F30A  
+**Purpose**: Data stream (Readable/Writable Stream)
+
+**Syntax**:
+```aether
+source ⇢ 🌊
+```
+
+**Example**:
+```aether
+📄📍"large-file.dat" ⇢ 🌊 ▷ stream
+```
+Create stream from file for efficient processing
+
+---
+
+### 🧱 - Buffer
+
+**Symbol**: `🧱` (Brick Emoji)  
+**Unicode**: U+1F9F1  
+**Purpose**: Binary buffer (Bytes/Blob)
+
+**Syntax**:
+```aether
+🧱size
+```
+
+**Example**:
+```aether
+🧱4KB ▷ buffer
+```
+Allocate 4KB buffer for data
+
+---
+
+### 🌬️ - Flush
+
+**Symbol**: `🌬️` (Wind Face Emoji)  
+**Unicode**: U+1F32C + U+FE0F  
+**Purpose**: Flush buffer to ensure data is written
+
+**Syntax**:
+```aether
+target ⇢ 🌬️
+```
+
+**Example**:
+```aether
+stream ⇢ 🌬️
+```
+Flush stream buffer
+
+---
+
+### 🔚 - EOF
+
+**Symbol**: `🔚` (END Arrow Emoji)  
+**Unicode**: U+1F51A  
+**Purpose**: End of file/stream marker
+
+**Syntax**:
+```aether
+stream ≠ 🔚
+```
+
+**Example**:
+```aether
+↻(stream ≠ 🔚): (stream ⇢ 📖 ▷ data)
+```
+Loop until end of stream
+
+---
+
+### ⏭️ - Skip/Seek
+
+**Symbol**: `⏭️` (Next Track Button Emoji)  
+**Unicode**: U+23ED + U+FE0F  
+**Purpose**: Skip bytes or move stream pointer
+
+**Syntax**:
+```aether
+⏭️count
+```
+
+**Example**:
+```aether
+stream ⇢ ⏭️1024
+```
+Skip 1024 bytes in stream
+
+---
+
+## Networking (v1.3)
+
+### 🔌 - Socket
+
+**Symbol**: `🔌` (Electric Plug Emoji)  
+**Unicode**: U+1F50C  
+**Purpose**: Network socket (TCP/UDP)
+
+**Syntax**:
+```aether
+🔌protocol
+```
+
+**Example**:
+```aether
+🔌TCP ▷ socket
+```
+Create TCP socket
+
+---
+
+### 👂 - Listen
+
+**Symbol**: `👂` (Ear Emoji)  
+**Unicode**: U+1F442  
+**Purpose**: Listen on port (Server Bind)
+
+**Syntax**:
+```aether
+👂port
+```
+
+**Example**:
+```aether
+👂8080 ▷ listener
+```
+Listen for connections on port 8080
+
+---
+
+### 📞 - Connect
+
+**Symbol**: `📞` (Telephone Receiver Emoji)  
+**Unicode**: U+1F4DE  
+**Purpose**: Initiate connection (Client Connect)
+
+**Syntax**:
+```aether
+📞address
+```
+
+**Example**:
+```aether
+📞"localhost:8080" ▷ conn
+```
+Connect to remote server
+
+---
+
+### 🚪 - Port
+
+**Symbol**: `🚪` (Door Emoji)  
+**Unicode**: U+1F6AA  
+**Purpose**: Port number specification
+
+**Syntax**:
+```aether
+🚪number
+```
+
+**Example**:
+```aether
+🚪3000
+```
+Specify port 3000
+
+---
+
+### 📦 - Packet
+
+**Symbol**: `📦` (Package Emoji)  
+**Unicode**: U+1F4E6  
+**Purpose**: Data packet (Datagram)
+
+**Syntax**:
+```aether
+📦data
+```
+
+**Example**:
+```aether
+📦"Hello" ⇢ socket
+```
+Create and send packet
+
+---
+
+### 🤝 - Handshake
+
+**Symbol**: `🤝` (Handshake Emoji)  
+**Unicode**: U+1F91D  
+**Purpose**: Protocol handshake/establish connection
+
+**Syntax**:
+```aether
+🤝connection
+```
+
+**Example**:
+```aether
+conn ⇢ 🤝
+```
+Perform connection handshake
+
+---
+
+## Process & OS (v1.3)
+
+### ⚙️ - Process
+
+**Symbol**: `⚙️` (Gear Emoji)  
+**Unicode**: U+2699 + U+FE0F  
+**Purpose**: Process object and management
+
+**Syntax**:
+```aether
+⚙️command
+```
+
+**Example**:
+```aether
+⚙️"python script.py" ▷ proc
+```
+Create process for command
+
+---
+
+### 🐚 - Shell
+
+**Symbol**: `🐚` (Spiral Shell Emoji)  
+**Unicode**: U+1F41A  
+**Purpose**: Execute shell command
+
+**Syntax**:
+```aether
+🐚"command"
+```
+
+**Example**:
+```aether
+🐚"ls -la" ▷ output
+```
+Execute shell command and capture output
+
+---
+
+### 🌍 - Env
+
+**Symbol**: `🌍` (Earth Globe Emoji)  
+**Unicode**: U+1F30D  
+**Purpose**: Environment variable (Get/Set)
+
+**Syntax**:
+```aether
+🌍"VAR_NAME"
+```
+
+**Example**:
+```aether
+🌍"PATH" ▷ path
+```
+Get PATH environment variable
+
+---
+
+### 🐏 - Memory
+
+**Symbol**: `🐏` (Ram Emoji)  
+**Unicode**: U+1F40F  
+**Purpose**: Memory operations/manual allocation
+
+**Syntax**:
+```aether
+🐏size
+```
+
+**Example**:
+```aether
+🐏1MB ▷ mem
+```
+Allocate 1MB of memory
+
+---
+
+### 👋 - Exit
+
+**Symbol**: `👋` (Waving Hand Emoji)  
+**Unicode**: U+1F44B  
+**Purpose**: Exit program with exit code
+
+**Syntax**:
+```aether
+👋code
+```
+
+**Example**:
+```aether
+👋0
+```
+Exit program successfully
+
+---
+
+### 📶 - Signal
+
+**Symbol**: `📶` (Antenna Bars Emoji)  
+**Unicode**: U+1F4F6  
+**Purpose**: Send/capture system signal
+
+**Syntax**:
+```aether
+📶signal
+```
+
+**Example**:
+```aether
+📶SIGTERM ⇢ process
+```
+Send SIGTERM signal to process
+
+---
+
+## Complete v1.3 Examples
+
+### High-Performance Log Rotation
+
+A real-world example demonstrating v1.3 File System features:
+
+**Requirements:**
+1. Accept log message as input
+2. Open log file handle
+3. Check if file size exceeds 1GB
+4. If too large, rotate log file using shell command
+5. Append message to log file
+
+**Aether v1.3 Implementation:**
+```aether
+ƒ log: 📥msg ⨠ 📄📍"/var/log/app.log" ▷ f ⨠ ◇(f.size > 1GB): 🐚"mv /var/log/app.log /var/log/app.old" ⨠ msg ⇢ 🖇️f
+```
+
+**Breakdown:**
+1. `ƒ log:` - Define log function
+2. `📥msg` - Input message parameter
+3. `⨠` - Then (sequence)
+4. `📄📍"/var/log/app.log"` - Create file handle for log path
+5. `▷ f` - Bind to variable `f`
+6. `⨠` - Then
+7. `◇(f.size > 1GB):` - If file size exceeds 1GB
+8. `🐚"mv /var/log/app.log /var/log/app.old"` - Execute shell command to rotate
+9. `⨠` - Then
+10. `msg ⇢ 🖇️f` - Append message to file
+
+**Equivalent Traditional Code:**
+```javascript
+function log(msg) {
+  const f = openFile("/var/log/app.log");
+  if (f.size > 1024 * 1024 * 1024) {
+    exec("mv /var/log/app.log /var/log/app.old");
+  }
+  f.append(msg);
+}
+```
+
+---
+
+### TCP Echo Server
+
+A networking example demonstrating v1.3 Socket programming:
+
+**Requirements:**
+1. Create TCP socket
+2. Listen on port 8080
+3. Accept connections in infinite loop
+4. For each connection, handle asynchronously:
+   - Create stream from connection
+   - Read data until EOF
+   - Echo data back
+   - Flush buffer
+5. Close connection
+
+**Aether v1.3 Implementation:**
+```aether
+🔌TCP ⨠ 👂8080 ⨠ ↻: (⏳👂 ▷ conn ⨠ ⚡(🛡(conn ⇢ 🌊 ▷ s ⨠ ↻(s ≠ 🔚): (s ⇢ 📖 ▷ data ⨠ data ⇢ 🖊️s ⨠ s ⇢ 🌬️)) ⨠ conn ⇢ 👋))
+```
+
+**Breakdown:**
+1. `🔌TCP` - Create TCP socket
+2. `⨠` - Then
+3. `👂8080` - Listen on port 8080
+4. `⨠` - Then
+5. `↻:` - Infinite loop
+6. `⏳👂` - Await new connection
+7. `▷ conn` - Bind connection to `conn`
+8. `⨠` - Then
+9. `⚡(...)` - Handle asynchronously (Go-style)
+10. `🛡(...)` - Error protection
+11. `conn ⇢ 🌊` - Create stream from connection
+12. `▷ s` - Bind to `s`
+13. `⨠` - Then
+14. `↻(s ≠ 🔚):` - Loop until stream end
+15. `s ⇢ 📖` - Read from stream
+16. `▷ data` - Bind data
+17. `⨠` - Then
+18. `data ⇢ 🖊️s` - Write data back to stream
+19. `⨠` - Then
+20. `s ⇢ 🌬️` - Flush buffer
+21. `⨠ conn ⇢ 👋` - Close connection
+
+**Equivalent Traditional Code:**
+```go
+func server() {
+  socket := createSocket("TCP")
+  listener := socket.listen(8080)
+  
+  for {
+    conn := listener.accept()
+    
+    go func() {
+      defer conn.close()
+      
+      stream := conn.getStream()
+      for !stream.eof() {
+        data := stream.read()
+        stream.write(data)
+        stream.flush()
+      }
+    }()
+  }
+}
+```
+
+---
+
+### Stream Processing Large Files
+
+A streams example demonstrating efficient large file processing:
+
+**Requirements:**
+1. Open file as stream
+2. Create 4KB buffer
+3. Loop until EOF
+4. Read chunks and split by newlines
+5. Process each line (save to database)
+
+**Aether v1.3 Implementation:**
+```aether
+📄📍"./data.csv" ⇢ 🌊 ▷ stream ⨠ ↻(stream ≠ 🔚): (stream ⇢ 📖(🧱4KB) ▷ chunk ⨠ chunk ⇢ ✂"\n" ▷ lines ⨠ ∀(lines): 💾)
+```
+
+**Breakdown:**
+1. `📄📍"./data.csv"` - File handle for data.csv
+2. `⇢ 🌊` - Create stream
+3. `▷ stream` - Bind to stream variable
+4. `⨠` - Then
+5. `↻(stream ≠ 🔚):` - Loop until end of file
+6. `stream ⇢ 📖(🧱4KB)` - Read 4KB chunk
+7. `▷ chunk` - Bind chunk
+8. `⨠` - Then
+9. `chunk ⇢ ✂"\n"` - Split by newlines
+10. `▷ lines` - Bind lines array
+11. `⨠` - Then
+12. `∀(lines): 💾` - For each line, persist to database
+
+**Equivalent Traditional Code:**
+```python
+with open("./data.csv", "r") as file:
+  while True:
+    chunk = file.read(4096)
+    if not chunk:
+      break
+    lines = chunk.split("\n")
+    for line in lines:
+      database.save(line)
+```
+
+---
+
+### Environment Variables and Shell Integration
+
+A process/OS example demonstrating system integration:
+
+**Requirements:**
+1. Get PATH environment variable
+2. Execute shell command
+3. Output result
+
+**Aether v1.3 Implementation:**
+```aether
+🌍"PATH" ▷ path ⨠ 🐚"ls -la" ▷ output ⨠ 📤output
+```
+
+**Breakdown:**
+1. `🌍"PATH"` - Get PATH environment variable
+2. `▷ path` - Bind to path variable
+3. `⨠` - Then
+4. `🐚"ls -la"` - Execute shell command
+5. `▷ output` - Bind output
+6. `⨠` - Then
+7. `📤output` - Output result
+
+**Equivalent Traditional Code:**
+```javascript
+const path = process.env.PATH;
+const output = exec("ls -la");
+console.log(output);
+```
+
+---
+
 ## Tips for Using Symbols
 
 ### Input Methods
@@ -1467,6 +2141,12 @@ All symbols are UTF-8 encoded:
 - **Testing & Debugging**: 5 new symbols for test definitions, assertions, mocks, benchmarking, and debugging
 - **Security & Crypto**: 5 new symbols for encryption, decryption, hashing, signing, and verification
 - **Math & Science**: 5 new symbols for power operations, roots, approximate equality, infinity, and delta calculations
+
+**Aether v1.3** adds:
+- **File System**: 8 new symbols for file operations, directories, paths, reading, writing, appending, deleting, and permissions
+- **Streams & Buffers**: 5 new symbols for stream processing, buffers, flushing, EOF detection, and seeking
+- **Networking**: 6 new symbols for sockets, listening, connecting, ports, packets, and handshakes
+- **Process & OS**: 6 new symbols for process management, shell execution, environment variables, memory allocation, exit, and signals
 
 This encoding allows maximum information density while maintaining compatibility with modern text systems.
 

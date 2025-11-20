@@ -1,0 +1,9 @@
+// Stream processing large files (v1.3)
+// Read large CSV file line by line using streams
+
+📄📍"./data.csv" ⇢ 🌊 ▷ stream ⨠ 
+↻(stream ≠ 🔚): (
+  stream ⇢ 📖(🧱4KB) ▷ chunk ⨠
+  chunk ⇢ ✂"\n" ▷ lines ⨠
+  ∀(lines): 💾
+)

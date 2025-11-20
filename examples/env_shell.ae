@@ -1,0 +1,4 @@
+// Environment variables and shell execution (v1.3)
+// Get PATH and execute shell command
+
+🌍"PATH" ▷ path ⨠ 🐚"ls -la" ▷ output ⨠ 📤output
