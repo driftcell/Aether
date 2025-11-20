@@ -73,6 +73,7 @@ fn print_symbols() {
     println!();
 
     let symbols = vec![
+        // Core symbols
         (Symbol::Function, "ƒ"),
         (Symbol::Lambda, "λ"),
         (Symbol::Input, "📥"),
@@ -102,16 +103,83 @@ fn print_symbols() {
     }
 
     println!();
-    println!("Example Program:");
+    println!("--- v1.1 Symbols ---");
+    println!();
+    
+    let v11_symbols = vec![
+        // Control Flow & Iteration
+        (Symbol::Loop, "↻"),
+        (Symbol::ForEach, "∀"),
+        (Symbol::Filter, "∃"),
+        (Symbol::Reduce, "∑"),
+        (Symbol::Try, "🛡"),
+        (Symbol::Retry, "♻"),
+        // Concurrency & Async
+        (Symbol::Async, "⚡"),
+        (Symbol::Await, "⏳"),
+        (Symbol::Thread, "🧵"),
+        (Symbol::Lock, "🔒"),
+        (Symbol::Emit, "📡"),
+        (Symbol::Watch, "👁"),
+        // Data Manipulation
+        (Symbol::Split, "✂"),
+        (Symbol::Join, "🔗"),
+        (Symbol::Regex, "✱"),
+        (Symbol::Equal, "≡"),
+        (Symbol::NotEqual, "≠"),
+        (Symbol::Immutable, "🧊"),
+        // System & Environment
+        (Symbol::Import, "🧩"),
+        (Symbol::Auth, "🔑"),
+        (Symbol::DateTime, "📅"),
+        (Symbol::Random, "🎲"),
+        (Symbol::Log, "🪵"),
+    ];
+
+    for (symbol, glyph) in v11_symbols {
+        println!("  {}  -  {}", glyph, symbol.description());
+    }
+
+    println!();
+    println!("--- v1.2 Symbols ---");
+    println!();
+    
+    let v12_symbols = vec![
+        // Testing & Debugging
+        (Symbol::Test, "🧪"),
+        (Symbol::Assert, "⚖️"),
+        (Symbol::Mock, "🎭"),
+        (Symbol::Benchmark, "⏱️"),
+        (Symbol::Debug, "🐛"),
+        // Security & Crypto
+        (Symbol::Encrypt, "🔐"),
+        (Symbol::Decrypt, "🔓"),
+        (Symbol::Hash, "#️⃣"),
+        (Symbol::Sign, "✍️"),
+        (Symbol::Verify, "🛡️"),
+        // Math & Science
+        (Symbol::Power, "↑"),
+        (Symbol::Root, "√"),
+        (Symbol::Approx, "≈"),
+        (Symbol::Infinity, "∞"),
+        (Symbol::Delta, "∆"),
+    ];
+
+    for (symbol, glyph) in v12_symbols {
+        println!("  {}  -  {}", glyph, symbol.description());
+    }
+
+    println!();
+    println!("Example Programs:");
+    println!();
+    println!("User Registration:");
     println!("  ƒ®: 📥⇢J ▷ u ⁇ 🛑400 ⨠ 💾u ⨠ 📤200");
     println!();
-    println!("This represents a user registration endpoint that:");
-    println!("  • Parses JSON input (📥⇢J)");
-    println!("  • Pipes into variable u (▷ u)");
-    println!("  • Guards against null/invalid data (⁇)");
-    println!("  • Halts with 400 error if invalid (🛑400)");
-    println!("  • Persists user data (💾u)");
-    println!("  • Returns 200 success (📤200)");
+    println!("Secure Password Storage (v1.2):");
+    println!("  ƒ®: 📥pass ▷ p ⨠ 🎲 ▷ salt ⨠ (p 🔗 salt) ⇢ #️⃣ ▷ hash ⨠ 💾{{h:hash, s:salt}} ⨠ 📤✓");
+    println!();
+    println!("Unit Test (v1.2):");
+    println!("  🧪 \"AuthTest\": 🎭💾 ⨠ ⏱️(\"admin\" ⇢ ® ▷ res) ▷ time ⨠ ⚖️(res ≡ 200) ⨠ ⚖️(time < 50ms)");
 }
 
 fn run_file(filename: &str) {

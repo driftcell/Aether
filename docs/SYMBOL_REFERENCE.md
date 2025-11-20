@@ -14,7 +14,10 @@ Complete reference for all symbols in the Aether programming language.
 8. [Concurrency & Async (v1.1)](#concurrency--async-v11)
 9. [Data Manipulation (v1.1)](#data-manipulation-v11)
 10. [System & Environment (v1.1)](#system--environment-v11)
-11. [Complete Examples](#complete-example)
+11. [Testing & Debugging (v1.2)](#testing--debugging-v12)
+12. [Security & Crypto (v1.2)](#security--crypto-v12)
+13. [Math & Science (v1.2)](#math--science-v12)
+14. [Complete Examples](#complete-example)
 
 ## Function & Control Flow
 
@@ -890,6 +893,300 @@ Log message
 
 ---
 
+## Testing & Debugging (v1.2)
+
+### 🧪 - Test/Suite
+
+**Symbol**: `🧪` (Test Tube)  
+**Unicode**: U+1F9EA  
+**Purpose**: Define test case or test suite
+
+**Syntax**:
+```aether
+🧪 "TestName": body
+```
+
+**Example**:
+```aether
+🧪 "AuthTest": 🎭💾 ⨠ "admin" ⇢ ® ▷ res ⨠ ⚖️(res ≡ 200)
+```
+Define a test suite for authentication
+
+---
+
+### ⚖️ - Assert
+
+**Symbol**: `⚖️` (Balance Scale)  
+**Unicode**: U+2696 + U+FE0F  
+**Purpose**: Assert condition - throws error if condition is false
+
+**Syntax**:
+```aether
+⚖️(condition)
+```
+
+**Example**:
+```aether
+⚖️(status ≡ 200)
+⚖️(time < 50ms)
+```
+Assert that status equals 200 and time is less than 50ms
+
+---
+
+### 🎭 - Mock/Stub
+
+**Symbol**: `🎭` (Performing Arts)  
+**Unicode**: U+1F3AD  
+**Purpose**: Mock external dependencies or data for testing
+
+**Syntax**:
+```aether
+🎭 dependency
+```
+
+**Example**:
+```aether
+🎭💾
+```
+Mock database operations
+
+---
+
+### ⏱️ - Benchmark
+
+**Symbol**: `⏱️` (Stopwatch)  
+**Unicode**: U+23F1 + U+FE0F  
+**Purpose**: Measure execution time and performance analysis
+
+**Syntax**:
+```aether
+⏱️(body) ▷ timeVar
+```
+
+**Example**:
+```aether
+⏱️("admin" ⇢ ®) ▷ time ⨠ ⚖️(time < 50ms)
+```
+Benchmark registration function and assert it completes in under 50ms
+
+---
+
+### 🐛 - Debug
+
+**Symbol**: `🐛` (Bug)  
+**Unicode**: U+1F41B  
+**Purpose**: Enter debug mode or set breakpoint
+
+**Syntax**:
+```aether
+🐛
+```
+
+**Example**:
+```aether
+📥 ⨠ 🐛 ⨠ 💾
+```
+Set breakpoint between input and persist operations
+
+---
+
+## Security & Crypto (v1.2)
+
+### 🔐 - Encrypt
+
+**Symbol**: `🔐` (Closed Lock with Key)  
+**Unicode**: U+1F510  
+**Purpose**: Encrypt data using public key or symmetric key
+
+**Syntax**:
+```aether
+data ⇢ 🔐 key
+```
+
+**Example**:
+```aether
+message ⇢ 🔐 publicKey ▷ encrypted
+```
+Encrypt message with public key
+
+---
+
+### 🔓 - Decrypt
+
+**Symbol**: `🔓` (Open Lock)  
+**Unicode**: U+1F513  
+**Purpose**: Decrypt encrypted data
+
+**Syntax**:
+```aether
+encrypted ⇢ 🔓 key
+```
+
+**Example**:
+```aether
+encrypted ⇢ 🔓 privateKey ▷ plaintext
+```
+Decrypt data with private key
+
+---
+
+### #️⃣ - Hash
+
+**Symbol**: `#️⃣` (Number Sign/Hash Key)  
+**Unicode**: U+0023 + U+FE0F + U+20E3  
+**Purpose**: Calculate hash value (SHA, MD5, etc.)
+
+**Syntax**:
+```aether
+data ⇢ #️⃣
+```
+
+**Example**:
+```aether
+(password 🔗 salt) ⇢ #️⃣ ▷ hash
+```
+Hash password concatenated with salt
+
+---
+
+### ✍️ - Sign
+
+**Symbol**: `✍️` (Writing Hand)  
+**Unicode**: U+270D + U+FE0F  
+**Purpose**: Create digital signature
+
+**Syntax**:
+```aether
+data ⇢ ✍️ privateKey
+```
+
+**Example**:
+```aether
+document ⇢ ✍️ signingKey ▷ signature
+```
+Sign document with private key
+
+---
+
+### 🛡️ - Verify
+
+**Symbol**: `🛡️` (Shield) *with variation selector*  
+**Unicode**: U+1F6E1 + U+FE0F  
+**Purpose**: Verify digital signature (different from 🛡 Try)
+
+**Syntax**:
+```aether
+🛡️(signature, data, publicKey)
+```
+
+**Example**:
+```aether
+🛡️(sig, doc, pubKey) ⨠ ✓
+```
+Verify signature and return success
+
+**Note**: This is different from `🛡` (Try/Rescue) which is for exception handling.
+
+---
+
+## Math & Science (v1.2)
+
+### ↑ - Power
+
+**Symbol**: `↑` (Upwards Arrow)  
+**Unicode**: U+2191  
+**Purpose**: Power/exponentiation operation
+
+**Syntax**:
+```aether
+base↑exponent
+```
+
+**Example**:
+```aether
+2↑3 ▷ result  // result = 8
+(v1 - v2)↑2   // square the difference
+```
+
+---
+
+### √ - Root
+
+**Symbol**: `√` (Square Root)  
+**Unicode**: U+221A  
+**Purpose**: Square root operation
+
+**Syntax**:
+```aether
+value ⇢ √
+```
+
+**Example**:
+```aether
+((v1 - v2)↑2) ⇢ √ ▷ dist
+```
+Calculate distance between vectors
+
+---
+
+### ≈ - Approx
+
+**Symbol**: `≈` (Almost Equal To)  
+**Unicode**: U+2248  
+**Purpose**: Approximate equality for floating-point comparisons
+
+**Syntax**:
+```aether
+value1 ≈ value2
+```
+
+**Example**:
+```aether
+◇(dist ≈ 0) 📤"Same"
+```
+Check if distance is approximately zero
+
+---
+
+### ∞ - Infinity
+
+**Symbol**: `∞` (Infinity)  
+**Unicode**: U+221E  
+**Purpose**: Represent infinity value
+
+**Syntax**:
+```aether
+∞
+```
+
+**Example**:
+```aether
+◇(count < ∞) ↻ process
+```
+Loop while count is less than infinity (always true)
+
+---
+
+### ∆ - Delta
+
+**Symbol**: `∆` (Increment/Delta)  
+**Unicode**: U+2206  
+**Purpose**: Change amount or difference value
+
+**Syntax**:
+```aether
+∆ variable
+```
+
+**Example**:
+```aether
+newValue - oldValue ▷ ∆temp
+```
+Calculate temperature change
+
+---
+
 ## Complete Example
 
 ### User Registration Endpoint
@@ -990,6 +1287,141 @@ await Promise.all(
 
 ---
 
+### Secure Password Storage (v1.2 - Security)
+
+A real-world example demonstrating v1.2 Security features:
+
+**Requirements:**
+1. Receive password input
+2. Generate random salt value
+3. Concatenate password with salt
+4. Calculate hash
+5. Store hash and salt in database
+6. Return success
+
+**Aether v1.2 Implementation:**
+```aether
+ƒ®: 📥pass ▷ p ⨠ 🎲 ▷ salt ⨠ (p 🔗 salt) ⇢ #️⃣ ▷ hash ⨠ 💾{h:hash, s:salt} ⨠ 📤✓
+```
+
+**Breakdown:**
+1. `ƒ®:` - Define register function
+2. `📥pass ▷ p` - Input password and bind to `p`
+3. `⨠` - Then (sequence)
+4. `🎲 ▷ salt` - Generate random salt value
+5. `⨠` - Then
+6. `(p 🔗 salt)` - Concatenate password with salt
+7. `⇢ #️⃣` - Pipe through hash function
+8. `▷ hash` - Bind result to `hash`
+9. `⨠` - Then
+10. `💾{h:hash, s:salt}` - Persist hash and salt object
+11. `⨠` - Then
+12. `📤✓` - Return success
+
+**Equivalent Traditional Code:**
+```javascript
+function register(password) {
+  const p = password;
+  const salt = Math.random().toString(36);
+  const combined = p + salt;
+  const hash = crypto.createHash('sha256').update(combined).digest('hex');
+  await database.save({ h: hash, s: salt });
+  return true;
+}
+```
+
+---
+
+### Unit Testing with Mocks (v1.2 - Testing)
+
+A testing example demonstrating v1.2 Testing features:
+
+**Requirements:**
+1. Define test suite named "AuthTest"
+2. Mock database layer
+3. Benchmark the registration function call
+4. Assert result status is 200
+5. Assert execution time is less than 50ms
+
+**Aether v1.2 Implementation:**
+```aether
+🧪 "AuthTest": 🎭💾 ⨠ ⏱️("admin" ⇢ ® ▷ res) ▷ time ⨠ ⚖️(res ≡ 200) ⨠ ⚖️(time < 50ms)
+```
+
+**Breakdown:**
+1. `🧪 "AuthTest":` - Define test suite
+2. `🎭💾` - Mock the database operations
+3. `⨠` - Then
+4. `⏱️(...)` - Start benchmark timer
+5. `"admin" ⇢ ®` - Call register with "admin"
+6. `▷ res` - Bind result
+7. `▷ time` - Bind execution time
+8. `⨠` - Then
+9. `⚖️(res ≡ 200)` - Assert result equals 200
+10. `⨠` - Then
+11. `⚖️(time < 50ms)` - Assert time less than 50ms
+
+**Equivalent Traditional Code:**
+```javascript
+describe("AuthTest", () => {
+  beforeEach(() => {
+    mockDatabase();
+  });
+
+  it("should complete in under 50ms", async () => {
+    const startTime = performance.now();
+    const res = await register("admin");
+    const time = performance.now() - startTime;
+    
+    expect(res).toBe(200);
+    expect(time).toBeLessThan(50);
+  });
+});
+```
+
+---
+
+### Vector Distance Calculation (v1.2 - Math)
+
+A scientific computing example demonstrating v1.2 Math features:
+
+**Requirements:**
+1. Calculate distance between two vectors
+2. Use approximate equality for floating-point comparison
+3. Return "Same" if vectors are approximately equal
+
+**Aether v1.2 Implementation:**
+```aether
+ƒ calc: 📥v1 📥v2 ⨠ ((v1 - v2)↑2) ⇢ √ ▷ dist ⨠ ◇(dist ≈ 0) 📤"Same"
+```
+
+**Breakdown:**
+1. `ƒ calc:` - Define calc function
+2. `📥v1 📥v2` - Input two vectors
+3. `⨠` - Then
+4. `(v1 - v2)` - Subtract vectors
+5. `↑2` - Square the result (power of 2)
+6. `⇢ √` - Pipe to square root
+7. `▷ dist` - Bind to distance variable
+8. `⨠` - Then
+9. `◇(dist ≈ 0)` - If distance approximately equals 0
+10. `📤"Same"` - Output "Same"
+
+**Equivalent Traditional Code:**
+```javascript
+function calc(v1, v2) {
+  const diff = v1 - v2;
+  const squared = Math.pow(diff, 2);
+  const dist = Math.sqrt(squared);
+  
+  if (Math.abs(dist - 0) < Number.EPSILON) {
+    return "Same";
+  }
+}
+```
+
+---
+
 ## Tips for Using Symbols
 
 ### Input Methods
@@ -1021,14 +1453,20 @@ await Promise.all(
 All symbols are UTF-8 encoded:
 - **1 byte**: ASCII (J, S, N)
 - **2 bytes**: Latin extended, Greek (ƒ, λ, ®)
-- **3 bytes**: Mathematical operators (⇢, ▷, ⨠, ⁇, ◇, ⊕, ⊗, ¬, ∅, ∀, ∃, ∑, ↻, ≡, ≠, ✂, ✱)
-- **4 bytes**: Emoji (📥, 📤, 💾, 🔍, 🛑, ✓, 🗂, 🗄, 🌐, 🛡, ♻, ⚡, ⏳, 🧵, 🔒, 📡, 👁, 🔗, 🧊, 🧩, 🔑, 📅, 🎲, 🪵)
+- **3 bytes**: Mathematical operators (⇢, ▷, ⨠, ⁇, ◇, ⊕, ⊗, ¬, ∅, ∀, ∃, ∑, ↻, ≡, ≠, ✂, ✱, ↑, √, ≈, ∞, ∆)
+- **4 bytes**: Emoji (📥, 📤, 💾, 🔍, 🛑, ✓, 🗂, 🗄, 🌐, 🛡, ♻, ⚡, ⏳, 🧵, 🔒, 📡, 👁, 🔗, 🧊, 🧩, 🔑, 📅, 🎲, 🪵, 🧪, 🎭, 🐛, 🔐, 🔓)
+- **Multi-byte emoji sequences**: (⚖️, ⏱️, #️⃣, ✍️, 🛡️)
 
-**Aether v1.1** now includes:
+**Aether v1.1** includes:
 - **Control Flow**: 6 new symbols for loops, iteration, and error handling
 - **Concurrency**: 6 new symbols for async/await and parallel execution
 - **Data Operations**: 6 new symbols for string/array manipulation and comparisons
 - **System/Environment**: 5 new symbols for modules, auth, time, random, and logging
+
+**Aether v1.2** adds:
+- **Testing & Debugging**: 5 new symbols for test definitions, assertions, mocks, benchmarking, and debugging
+- **Security & Crypto**: 5 new symbols for encryption, decryption, hashing, signing, and verification
+- **Math & Science**: 5 new symbols for power operations, roots, approximate equality, infinity, and delta calculations
 
 This encoding allows maximum information density while maintaining compatibility with modern text systems.
 
