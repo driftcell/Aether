@@ -1549,6 +1549,7 @@ mod tests {
         
         // Simple loop that returns null (falsy) immediately
         let node = AstNode::Loop {
+            condition: None,
             body: Box::new(AstNode::Literal(LiteralValue::Number(0.0))),
         };
         
