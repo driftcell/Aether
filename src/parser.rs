@@ -734,6 +734,158 @@ impl Parser {
                         Ok(AstNode::Variable("http".to_string()))
                     }
                 }
+                
+                // Testing & Debugging (v1.2)
+                TokenType::Symbol(Symbol::Test) => {
+                    self.advance();
+                    // Expect test name (string literal symbol)
+                    let name = if let Some(Token { token_type: TokenType::Symbol(Symbol::StringLiteral(s)), .. }) = self.peek() {
+                        let n = s.clone();
+                        self.advance();
+                        n
+                    } else {
+                        "Unnamed".to_string()
+                    };
+                    
+                    // Skip colon if present
+                    if let Some(Token { token_type: TokenType::Colon, .. }) = self.peek() {
+                        self.advance();
+                    }
+                    
+                    let body = self.parse_primary()?;
+                    Ok(AstNode::Test {
+                        name,
+                        body: Box::new(body),
+                    })
+                }
+                TokenType::Symbol(Symbol::Assert) => {
+                    self.advance();
+                    // Parse condition (typically in parentheses but we'll just parse primary)
+                    let condition = self.parse_primary()?;
+                    Ok(AstNode::Assert {
+                        condition: Box::new(condition),
+                    })
+                }
+                TokenType::Symbol(Symbol::Mock) => {
+                    self.advance();
+                    let target = self.parse_primary()?;
+                    Ok(AstNode::Mock {
+                        target: Box::new(target),
+                    })
+                }
+                TokenType::Symbol(Symbol::Benchmark) => {
+                    self.advance();
+                    let body = self.parse_primary()?;
+                    Ok(AstNode::Benchmark {
+                        body: Box::new(body),
+                    })
+                }
+                TokenType::Symbol(Symbol::Debug) => {
+                    self.advance();
+                    Ok(AstNode::Debug)
+                }
+                
+                // Security & Crypto (v1.2)
+                TokenType::Symbol(Symbol::Encrypt) => {
+                    self.advance();
+                    // In real usage: data ⇢ 🔐 key
+                    // We'll parse as: 🔐(data, key) or expect piped data
+                    let data = self.parse_primary()?;
+                    let key = self.parse_primary()?;
+                    Ok(AstNode::Encrypt {
+                        data: Box::new(data),
+                        key: Box::new(key),
+                    })
+                }
+                TokenType::Symbol(Symbol::Decrypt) => {
+                    self.advance();
+                    let data = self.parse_primary()?;
+                    let key = self.parse_primary()?;
+                    Ok(AstNode::Decrypt {
+                        data: Box::new(data),
+                        key: Box::new(key),
+                    })
+                }
+                TokenType::Symbol(Symbol::Hash) => {
+                    self.advance();
+                    let data = self.parse_primary()?;
+                    Ok(AstNode::Hash {
+                        data: Box::new(data),
+                    })
+                }
+                TokenType::Symbol(Symbol::Sign) => {
+                    self.advance();
+                    let data = self.parse_primary()?;
+                    let key = self.parse_primary()?;
+                    Ok(AstNode::Sign {
+                        data: Box::new(data),
+                        key: Box::new(key),
+                    })
+                }
+                TokenType::Symbol(Symbol::Verify) => {
+                    self.advance();
+                    // Parse as Verify(sig, data, key)
+                    let signature = self.parse_primary()?;
+                    let data = self.parse_primary()?;
+                    let key = self.parse_primary()?;
+                    Ok(AstNode::VerifySignature {
+                        signature: Box::new(signature),
+                        data: Box::new(data),
+                        key: Box::new(key),
+                    })
+                }
+                
+                // Math & Science (v1.2)
+                TokenType::Symbol(Symbol::Power) => {
+                    self.advance();
+                    // Parse as infix: base↑exponent
+                    // For simplicity, expect base from pipe and parse exponent
+                    let exponent = self.parse_primary()?;
+                    // Base comes from previous context (pipe)
+                    let base = Box::new(AstNode::Variable("_pipe".to_string()));
+                    Ok(AstNode::Power {
+                        base,
+                        exponent: Box::new(exponent),
+                    })
+                }
+                TokenType::Symbol(Symbol::Root) => {
+                    self.advance();
+                    let value = self.parse_primary()?;
+                    Ok(AstNode::Root {
+                        value: Box::new(value),
+                    })
+                }
+                TokenType::Symbol(Symbol::Approx) => {
+                    self.advance();
+                    // Parse as infix: left ≈ right
+                    let right = self.parse_primary()?;
+                    let left = Box::new(AstNode::Variable("_pipe".to_string()));
+                    Ok(AstNode::Approx {
+                        left,
+                        right: Box::new(right),
+                    })
+                }
+                TokenType::Symbol(Symbol::Infinity) => {
+                    self.advance();
+                    Ok(AstNode::Infinity)
+                }
+                TokenType::Symbol(Symbol::Delta) => {
+                    self.advance();
+                    // Parse as: ∆varname
+                    let name = if let Some(Token { token_type: TokenType::Symbol(Symbol::Identifier(id)), .. }) = self.peek() {
+                        let n = id.clone();
+                        self.advance();
+                        n
+                    } else {
+                        "unknown".to_string()
+                    };
+                    let value = self.parse_primary()?;
+                    Ok(AstNode::Delta {
+                        name,
+                        value: Box::new(value),
+                    })
+                }
+                
                 _ => Err(AetherError::ParserError(format!(
                     "Unexpected token: {:?}",
                     token
@@ -963,6 +1115,135 @@ mod tests {
         match &ast[0] {
             AstNode::DateTime => {},
             _ => panic!("Expected DateTime node"),
+        }
+    }
+    
+    // v1.2 Parser tests
+    #[test]
+    fn test_parse_test_suite() {
+        let mut lexer = Lexer::new("🧪 \"MyTest\": 42".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Test { name, .. } => {
+                assert_eq!(name, "MyTest");
+            },
+            _ => panic!("Expected Test node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_assert() {
+        let mut lexer = Lexer::new("⚖️ 42".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Assert { .. } => {},
+            _ => panic!("Expected Assert node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_mock() {
+        let mut lexer = Lexer::new("🎭 \"database\"".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Mock { .. } => {},
+            _ => panic!("Expected Mock node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_benchmark() {
+        let mut lexer = Lexer::new("⏱️ 42".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Benchmark { .. } => {},
+            _ => panic!("Expected Benchmark node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_debug() {
+        let mut lexer = Lexer::new("🐛".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Debug => {},
+            _ => panic!("Expected Debug node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_hash() {
+        let mut lexer = Lexer::new("#️⃣ \"data\"".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Hash { .. } => {},
+            _ => panic!("Expected Hash node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_power() {
+        let mut lexer = Lexer::new("↑ 2".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Power { .. } => {},
+            _ => panic!("Expected Power node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_root() {
+        let mut lexer = Lexer::new("√ 16".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Root { .. } => {},
+            _ => panic!("Expected Root node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_infinity() {
+        let mut lexer = Lexer::new("∞".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Infinity => {},
+            _ => panic!("Expected Infinity node"),
         }
     }
 }
