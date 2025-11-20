@@ -67,8 +67,64 @@ pub enum Symbol {
     // Network operations
     /// 🌐 - HTTP request
     HttpRequest,
+    /// 🌐📥 - HTTP GET (composed)
+    HttpGet,
     /// ® - Register/create
     Register,
+    
+    // Control Flow & Iteration (v1.1)
+    /// ↻ - Loop/While
+    Loop,
+    /// ∀ - ForEach/Map
+    ForEach,
+    /// ∃ - Filter/Find
+    Filter,
+    /// ∑ - Reduce/Sum
+    Reduce,
+    /// 🛡 - Try/Rescue
+    Try,
+    /// ♻ - Retry
+    Retry,
+    
+    // Concurrency & Async (v1.1)
+    /// ⚡ - Async/Trigger
+    Async,
+    /// ⏳ - Await
+    Await,
+    /// 🧵 - Thread/Task
+    Thread,
+    /// 🔒 - Mutex/Lock
+    Lock,
+    /// 📡 - Emit/Signal
+    Emit,
+    /// 👁 - Watch/Listen
+    Watch,
+    
+    // Data Manipulation (v1.1)
+    /// ✂ - Split/Slice
+    Split,
+    /// 🔗 - Join/Concat
+    Join,
+    /// ✱ - Regex/Match
+    Regex,
+    /// ≡ - Equal
+    Equal,
+    /// ≠ - Not Equal
+    NotEqual,
+    /// 🧊 - Immutable/Const
+    Immutable,
+    
+    // System & Environment (v1.1)
+    /// 🧩 - Import/Module
+    Import,
+    /// 🔑 - Auth/Token
+    Auth,
+    /// 📅 - Date/Time
+    DateTime,
+    /// 🎲 - Random
+    Random,
+    /// 🪵 - Log
+    Log,
     
     // Variables and identifiers
     /// Generic identifier
@@ -116,6 +172,33 @@ impl Symbol {
             "∅" => Some(Symbol::Empty),
             "🌐" => Some(Symbol::HttpRequest),
             "®" => Some(Symbol::Register),
+            // Control Flow & Iteration
+            "↻" => Some(Symbol::Loop),
+            "∀" => Some(Symbol::ForEach),
+            "∃" => Some(Symbol::Filter),
+            "∑" => Some(Symbol::Reduce),
+            "🛡" => Some(Symbol::Try),
+            "♻" => Some(Symbol::Retry),
+            // Concurrency & Async
+            "⚡" => Some(Symbol::Async),
+            "⏳" => Some(Symbol::Await),
+            "🧵" => Some(Symbol::Thread),
+            "🔒" => Some(Symbol::Lock),
+            "📡" => Some(Symbol::Emit),
+            "👁" => Some(Symbol::Watch),
+            // Data Manipulation
+            "✂" => Some(Symbol::Split),
+            "🔗" => Some(Symbol::Join),
+            "✱" => Some(Symbol::Regex),
+            "≡" => Some(Symbol::Equal),
+            "≠" => Some(Symbol::NotEqual),
+            "🧊" => Some(Symbol::Immutable),
+            // System & Environment
+            "🧩" => Some(Symbol::Import),
+            "🔑" => Some(Symbol::Auth),
+            "📅" => Some(Symbol::DateTime),
+            "🎲" => Some(Symbol::Random),
+            "🪵" => Some(Symbol::Log),
             _ => None,
         }
     }
@@ -147,7 +230,35 @@ impl Symbol {
             Symbol::Map => "🗄".to_string(),
             Symbol::Empty => "∅".to_string(),
             Symbol::HttpRequest => "🌐".to_string(),
+            Symbol::HttpGet => "🌐📥".to_string(),
             Symbol::Register => "®".to_string(),
+            // Control Flow & Iteration
+            Symbol::Loop => "↻".to_string(),
+            Symbol::ForEach => "∀".to_string(),
+            Symbol::Filter => "∃".to_string(),
+            Symbol::Reduce => "∑".to_string(),
+            Symbol::Try => "🛡".to_string(),
+            Symbol::Retry => "♻".to_string(),
+            // Concurrency & Async
+            Symbol::Async => "⚡".to_string(),
+            Symbol::Await => "⏳".to_string(),
+            Symbol::Thread => "🧵".to_string(),
+            Symbol::Lock => "🔒".to_string(),
+            Symbol::Emit => "📡".to_string(),
+            Symbol::Watch => "👁".to_string(),
+            // Data Manipulation
+            Symbol::Split => "✂".to_string(),
+            Symbol::Join => "🔗".to_string(),
+            Symbol::Regex => "✱".to_string(),
+            Symbol::Equal => "≡".to_string(),
+            Symbol::NotEqual => "≠".to_string(),
+            Symbol::Immutable => "🧊".to_string(),
+            // System & Environment
+            Symbol::Import => "🧩".to_string(),
+            Symbol::Auth => "🔑".to_string(),
+            Symbol::DateTime => "📅".to_string(),
+            Symbol::Random => "🎲".to_string(),
+            Symbol::Log => "🪵".to_string(),
             Symbol::Identifier(id) => id.clone(),
             Symbol::StringLiteral(s) => format!("\"{}\"", s),
             Symbol::NumberLiteral(n) => n.to_string(),
@@ -183,7 +294,35 @@ impl Symbol {
             Symbol::Map => "Map/Dictionary",
             Symbol::Empty => "Empty/null value",
             Symbol::HttpRequest => "HTTP request",
+            Symbol::HttpGet => "HTTP GET request",
             Symbol::Register => "Register/create",
+            // Control Flow & Iteration
+            Symbol::Loop => "Loop/While (unbounded loop)",
+            Symbol::ForEach => "ForEach/Map over collection",
+            Symbol::Filter => "Filter/Find in collection",
+            Symbol::Reduce => "Reduce/Sum aggregation",
+            Symbol::Try => "Try/Rescue exception handling",
+            Symbol::Retry => "Retry on failure",
+            // Concurrency & Async
+            Symbol::Async => "Async execution/Trigger",
+            Symbol::Await => "Await async result",
+            Symbol::Thread => "Thread/Task concurrent execution",
+            Symbol::Lock => "Mutex/Lock critical section",
+            Symbol::Emit => "Emit/Signal event",
+            Symbol::Watch => "Watch/Listen to events",
+            // Data Manipulation
+            Symbol::Split => "Split/Slice string or array",
+            Symbol::Join => "Join/Concat elements",
+            Symbol::Regex => "Regex/Pattern match",
+            Symbol::Equal => "Strict equality comparison",
+            Symbol::NotEqual => "Not equal comparison",
+            Symbol::Immutable => "Immutable/Const definition",
+            // System & Environment
+            Symbol::Import => "Import module/dependency",
+            Symbol::Auth => "Authentication/Token",
+            Symbol::DateTime => "Date/Time operations",
+            Symbol::Random => "Random number generation",
+            Symbol::Log => "Log message",
             Symbol::Identifier(_) => "Identifier",
             Symbol::StringLiteral(_) => "String literal",
             Symbol::NumberLiteral(_) => "Number literal",
@@ -218,5 +357,80 @@ mod tests {
     fn test_symbol_descriptions() {
         assert_eq!(Symbol::Function.description(), "Function definition");
         assert_eq!(Symbol::Guard.description(), "Guard/null check");
+    }
+    
+    #[test]
+    fn test_control_flow_symbols() {
+        let symbols = vec![
+            (Symbol::Loop, "↻"),
+            (Symbol::ForEach, "∀"),
+            (Symbol::Filter, "∃"),
+            (Symbol::Reduce, "∑"),
+            (Symbol::Try, "🛡"),
+            (Symbol::Retry, "♻"),
+        ];
+        
+        for (symbol, expected_str) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol));
+        }
+    }
+    
+    #[test]
+    fn test_async_symbols() {
+        let symbols = vec![
+            (Symbol::Async, "⚡"),
+            (Symbol::Await, "⏳"),
+            (Symbol::Thread, "🧵"),
+            (Symbol::Lock, "🔒"),
+            (Symbol::Emit, "📡"),
+            (Symbol::Watch, "👁"),
+        ];
+        
+        for (symbol, expected_str) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol));
+        }
+    }
+    
+    #[test]
+    fn test_data_manipulation_symbols() {
+        let symbols = vec![
+            (Symbol::Split, "✂"),
+            (Symbol::Join, "🔗"),
+            (Symbol::Regex, "✱"),
+            (Symbol::Equal, "≡"),
+            (Symbol::NotEqual, "≠"),
+            (Symbol::Immutable, "🧊"),
+        ];
+        
+        for (symbol, expected_str) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol));
+        }
+    }
+    
+    #[test]
+    fn test_system_symbols() {
+        let symbols = vec![
+            (Symbol::Import, "🧩"),
+            (Symbol::Auth, "🔑"),
+            (Symbol::DateTime, "📅"),
+            (Symbol::Random, "🎲"),
+            (Symbol::Log, "🪵"),
+        ];
+        
+        for (symbol, expected_str) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol));
+        }
+    }
+    
+    #[test]
+    fn test_new_symbol_descriptions() {
+        assert_eq!(Symbol::ForEach.description(), "ForEach/Map over collection");
+        assert_eq!(Symbol::Async.description(), "Async execution/Trigger");
+        assert_eq!(Symbol::Split.description(), "Split/Slice string or array");
+        assert_eq!(Symbol::Import.description(), "Import module/dependency");
     }
 }

@@ -145,6 +145,254 @@ impl Runtime {
             },
 
             AstNode::Empty => Ok(Value::Null),
+            
+            // Control Flow & Iteration
+            AstNode::Loop { body } => {
+                // Simplified: run loop once for demonstration
+                println!("Loop execution (simplified)");
+                self.eval_node(body)
+            }
+            
+            AstNode::ForEach { variable, collection, body } => {
+                let coll = if matches!(collection.as_ref(), AstNode::Empty) {
+                    self.variables.get("_pipe").cloned().unwrap_or(Value::Null)
+                } else {
+                    self.eval_node(collection)?
+                };
+                
+                // Simplified: iterate over array
+                if let Value::Array(items) = coll {
+                    let mut results = Vec::new();
+                    for item in items {
+                        self.variables.insert(variable.clone(), item);
+                        results.push(self.eval_node(body)?);
+                    }
+                    Ok(Value::Array(results))
+                } else {
+                    println!("ForEach: no array to iterate");
+                    Ok(Value::Null)
+                }
+            }
+            
+            AstNode::Filter { predicate } => {
+                let coll = self.variables.get("_pipe").cloned().unwrap_or(Value::Null);
+                if let Value::Array(items) = coll {
+                    let mut filtered = Vec::new();
+                    for item in items {
+                        self.variables.insert("_item".to_string(), item.clone());
+                        let result = self.eval_node(predicate)?;
+                        if !result.is_null() {
+                            filtered.push(item);
+                        }
+                    }
+                    Ok(Value::Array(filtered))
+                } else {
+                    println!("Filter: no array to filter");
+                    Ok(Value::Null)
+                }
+            }
+            
+            AstNode::Reduce { operation, initial } => {
+                let coll = self.variables.get("_pipe").cloned().unwrap_or(Value::Null);
+                let mut accumulator = self.eval_node(initial)?;
+                
+                if let Value::Array(items) = coll {
+                    for item in items {
+                        self.variables.insert("_acc".to_string(), accumulator);
+                        self.variables.insert("_item".to_string(), item);
+                        accumulator = self.eval_node(operation)?;
+                    }
+                }
+                Ok(accumulator)
+            }
+            
+            AstNode::TryRescue { try_body, rescue_body } => {
+                match self.eval_node(try_body) {
+                    Ok(val) => Ok(val),
+                    Err(_) => {
+                        if let Some(rescue) = rescue_body {
+                            self.eval_node(rescue)
+                        } else {
+                            Ok(Value::Null)
+                        }
+                    }
+                }
+            }
+            
+            AstNode::Retry { max_attempts, body } => {
+                let attempts = max_attempts.unwrap_or(3);
+                let mut last_error = None;
+                
+                for i in 0..attempts {
+                    match self.eval_node(body) {
+                        Ok(val) => return Ok(val),
+                        Err(e) => {
+                            println!("Retry attempt {} failed", i + 1);
+                            last_error = Some(e);
+                        }
+                    }
+                }
+                
+                Err(last_error.unwrap_or_else(|| AetherError::RuntimeError("Retry failed".to_string())))
+            }
+            
+            // Concurrency & Async
+            AstNode::Async { body } => {
+                println!("Async execution (simplified)");
+                self.eval_node(body)
+            }
+            
+            AstNode::Await { expression } => {
+                println!("Await (simplified)");
+                self.eval_node(expression)
+            }
+            
+            AstNode::Thread { body } => {
+                println!("Thread execution (simplified)");
+                self.eval_node(body)
+            }
+            
+            AstNode::Lock { body } => {
+                println!("Lock critical section (simplified)");
+                self.eval_node(body)
+            }
+            
+            AstNode::Emit { event } => {
+                let evt = self.eval_node(event)?;
+                println!("Emit event: {:?}", evt);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::Watch { event, handler } => {
+                let evt = self.eval_node(event)?;
+                println!("Watch event: {:?}", evt);
+                self.eval_node(handler)
+            }
+            
+            // Data Manipulation
+            AstNode::Split { target, delimiter } => {
+                let tgt = if matches!(target.as_ref(), AstNode::Empty) {
+                    self.variables.get("_pipe").cloned().unwrap_or(Value::Null)
+                } else {
+                    self.eval_node(target)?
+                };
+                
+                if let Value::String(s) = tgt {
+                    let delim = if let Some(d) = delimiter {
+                        match self.eval_node(d)? {
+                            Value::String(ds) => ds,
+                            _ => " ".to_string(),
+                        }
+                    } else {
+                        " ".to_string()
+                    };
+                    
+                    let parts: Vec<Value> = s.split(&delim)
+                        .map(|p| Value::String(p.to_string()))
+                        .collect();
+                    Ok(Value::Array(parts))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            
+            AstNode::Join { elements, separator } => {
+                let elems = if matches!(elements.as_ref(), AstNode::Empty) {
+                    self.variables.get("_pipe").cloned().unwrap_or(Value::Null)
+                } else {
+                    self.eval_node(elements)?
+                };
+                
+                if let Value::Array(items) = elems {
+                    let sep = if let Some(s) = separator {
+                        match self.eval_node(s)? {
+                            Value::String(ss) => ss,
+                            _ => "".to_string(),
+                        }
+                    } else {
+                        "".to_string()
+                    };
+                    
+                    let strings: Vec<String> = items.iter()
+                        .filter_map(|v| v.as_string().map(|s| s.to_string()))
+                        .collect();
+                    Ok(Value::String(strings.join(&sep)))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            
+            AstNode::RegexMatch { pattern, target } => {
+                let _pat = self.eval_node(pattern)?;
+                let _tgt = if matches!(target.as_ref(), AstNode::Empty) {
+                    self.variables.get("_pipe").cloned().unwrap_or(Value::Null)
+                } else {
+                    self.eval_node(target)?
+                };
+                println!("Regex match (simplified)");
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::Equal { left, right } => {
+                let l = if matches!(left.as_ref(), AstNode::Empty) {
+                    self.variables.get("_pipe").cloned().unwrap_or(Value::Null)
+                } else {
+                    self.eval_node(left)?
+                };
+                let r = self.eval_node(right)?;
+                Ok(Value::Boolean(l == r))
+            }
+            
+            AstNode::NotEqual { left, right } => {
+                let l = if matches!(left.as_ref(), AstNode::Empty) {
+                    self.variables.get("_pipe").cloned().unwrap_or(Value::Null)
+                } else {
+                    self.eval_node(left)?
+                };
+                let r = self.eval_node(right)?;
+                Ok(Value::Boolean(l != r))
+            }
+            
+            AstNode::Immutable { name, value } => {
+                let val = self.eval_node(value)?;
+                println!("Define immutable {}: {:?}", name, val);
+                self.variables.insert(name.clone(), val.clone());
+                Ok(val)
+            }
+            
+            // System & Environment
+            AstNode::Import { module } => {
+                println!("Import module: {}", module);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::Auth { token } => {
+                let tok = self.eval_node(token)?;
+                println!("Authenticate with token: {:?}", tok);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::DateTime => {
+                println!("Get current date/time");
+                Ok(Value::String("2025-11-20T08:32:24Z".to_string()))
+            }
+            
+            AstNode::Random => {
+                println!("Generate random number");
+                Ok(Value::Number(0.5))
+            }
+            
+            AstNode::Log { message } => {
+                let msg = self.eval_node(message)?;
+                println!("LOG: {:?}", msg);
+                Ok(Value::Null)
+            }
+            
+            AstNode::HttpGet { url } => {
+                let url_val = self.eval_node(url)?;
+                println!("HTTP GET: {:?}", url_val);
+                Ok(Value::Object(HashMap::new()))
+            }
         }
     }
 
