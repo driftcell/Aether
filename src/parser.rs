@@ -189,6 +189,89 @@ pub enum AstNode {
     HttpGet {
         url: Box<AstNode>,
     },
+    
+    // Testing & Debugging (v1.2)
+    /// Test suite definition
+    Test {
+        name: String,
+        body: Box<AstNode>,
+    },
+    
+    /// Assert condition
+    Assert {
+        condition: Box<AstNode>,
+    },
+    
+    /// Mock dependency
+    Mock {
+        target: Box<AstNode>,
+    },
+    
+    /// Benchmark execution time
+    Benchmark {
+        body: Box<AstNode>,
+    },
+    
+    /// Debug breakpoint
+    Debug,
+    
+    // Security & Crypto (v1.2)
+    /// Encrypt data
+    Encrypt {
+        data: Box<AstNode>,
+        key: Box<AstNode>,
+    },
+    
+    /// Decrypt data
+    Decrypt {
+        data: Box<AstNode>,
+        key: Box<AstNode>,
+    },
+    
+    /// Hash calculation
+    Hash {
+        data: Box<AstNode>,
+    },
+    
+    /// Digital signature
+    Sign {
+        data: Box<AstNode>,
+        key: Box<AstNode>,
+    },
+    
+    /// Verify signature
+    VerifySignature {
+        signature: Box<AstNode>,
+        data: Box<AstNode>,
+        key: Box<AstNode>,
+    },
+    
+    // Math & Science (v1.2)
+    /// Power operation
+    Power {
+        base: Box<AstNode>,
+        exponent: Box<AstNode>,
+    },
+    
+    /// Square root
+    Root {
+        value: Box<AstNode>,
+    },
+    
+    /// Approximate equality
+    Approx {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
+    /// Infinity value
+    Infinity,
+    
+    /// Delta/difference
+    Delta {
+        name: String,
+        value: Box<AstNode>,
+    },
 }
 
 /// Literal values in Aether

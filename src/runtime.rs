@@ -3,9 +3,19 @@
 use crate::error::{AetherError, Result};
 use crate::parser::{AstNode, LiteralValue};
 use std::collections::{HashMap, HashSet};
+use std::time::Instant;
 use chrono::Utc;
 use rand::Rng;
 use regex::Regex;
+
+// Crypto imports for v1.2
+use sha2::{Sha256, Digest};
+use aes_gcm::{
+    aead::{Aead, KeyInit},
+    Aes256Gcm, Nonce,
+};
+use ed25519_dalek::{Signer, Verifier, SigningKey, Signature};
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 
 /// Runtime value
 #[derive(Debug, Clone, PartialEq)]
@@ -54,6 +64,18 @@ pub struct Runtime {
     variables: HashMap<String, Value>,
     immutable_vars: HashSet<String>,
     max_loop_iterations: usize,
+    // v1.2 Testing & Debugging
+    test_context: Option<TestContext>,
+    mocked_targets: HashSet<String>,
+    debug_enabled: bool,
+}
+
+/// Test execution context
+#[derive(Debug, Clone)]
+struct TestContext {
+    name: String,
+    assertions_passed: usize,
+    assertions_failed: usize,
 }
 
 impl Runtime {
@@ -63,6 +85,9 @@ impl Runtime {
             variables: HashMap::new(),
             immutable_vars: HashSet::new(),
             max_loop_iterations: 10000,
+            test_context: None,
+            mocked_targets: HashSet::new(),
+            debug_enabled: false,
         }
     }
     
@@ -494,6 +519,313 @@ impl Runtime {
                 println!("HTTP GET: {:?}", url_val);
                 Ok(Value::Object(HashMap::new()))
             }
+            
+            // Testing & Debugging (v1.2)
+            AstNode::Test { name, body } => {
+                println!("Running test: {}", name);
+                self.test_context = Some(TestContext {
+                    name: name.clone(),
+                    assertions_passed: 0,
+                    assertions_failed: 0,
+                });
+                
+                let result = self.eval_node(body);
+                
+                if let Some(ctx) = &self.test_context {
+                    println!("Test '{}' completed: {} passed, {} failed", 
+                        ctx.name, ctx.assertions_passed, ctx.assertions_failed);
+                }
+                
+                self.test_context = None;
+                result
+            }
+            
+            AstNode::Assert { condition } => {
+                let cond = self.eval_node(condition)?;
+                let is_true = cond.is_truthy();
+                
+                if let Some(ctx) = &mut self.test_context {
+                    if is_true {
+                        ctx.assertions_passed += 1;
+                    } else {
+                        ctx.assertions_failed += 1;
+                    }
+                }
+                
+                if !is_true {
+                    return Err(AetherError::RuntimeError(
+                        format!("Assertion failed: condition evaluated to {:?}", cond)
+                    ));
+                }
+                
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::Mock { target } => {
+                let tgt = self.eval_node(target)?;
+                let target_str = match tgt {
+                    Value::String(s) => s,
+                    _ => format!("{:?}", tgt),
+                };
+                
+                self.mocked_targets.insert(target_str.clone());
+                println!("Mocked: {}", target_str);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::Benchmark { body } => {
+                let start = Instant::now();
+                let result = self.eval_node(body)?;
+                let duration = start.elapsed();
+                
+                let duration_ms = duration.as_secs_f64() * 1000.0;
+                println!("Benchmark: {:.3}ms", duration_ms);
+                
+                // Store duration in milliseconds
+                self.variables.insert("_benchmark_time".to_string(), Value::Number(duration_ms));
+                
+                Ok(result)
+            }
+            
+            AstNode::Debug => {
+                println!("DEBUG: Breakpoint hit");
+                println!("Variables: {:?}", self.variables);
+                self.debug_enabled = true;
+                Ok(Value::Null)
+            }
+            
+            // Security & Crypto (v1.2)
+            AstNode::Encrypt { data, key } => {
+                let data_val = self.eval_node(data)?;
+                let key_val = self.eval_node(key)?;
+                
+                let plaintext = match data_val {
+                    Value::String(s) => s.as_bytes().to_vec(),
+                    _ => return Err(AetherError::RuntimeError("Encrypt requires string data".to_string())),
+                };
+                
+                let key_str = match key_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Encrypt requires string key".to_string())),
+                };
+                
+                // Use SHA-256 to derive a 32-byte key from the string
+                let mut hasher = Sha256::new();
+                hasher.update(key_str.as_bytes());
+                let key_bytes = hasher.finalize();
+                
+                // Create cipher
+                let cipher = Aes256Gcm::new((&key_bytes).into());
+                
+                // Generate nonce
+                let nonce_bytes = rand::thread_rng().gen::<[u8; 12]>();
+                let nonce = Nonce::from_slice(&nonce_bytes);
+                
+                // Encrypt
+                match cipher.encrypt(nonce, plaintext.as_ref()) {
+                    Ok(ciphertext) => {
+                        // Combine nonce + ciphertext and encode as base64
+                        let mut combined = nonce_bytes.to_vec();
+                        combined.extend_from_slice(&ciphertext);
+                        let encoded = BASE64.encode(&combined);
+                        Ok(Value::String(encoded))
+                    }
+                    Err(e) => Err(AetherError::RuntimeError(format!("Encryption failed: {}", e))),
+                }
+            }
+            
+            AstNode::Decrypt { data, key } => {
+                let data_val = self.eval_node(data)?;
+                let key_val = self.eval_node(key)?;
+                
+                let encrypted_str = match data_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Decrypt requires string data".to_string())),
+                };
+                
+                let key_str = match key_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Decrypt requires string key".to_string())),
+                };
+                
+                // Decode from base64
+                let combined = BASE64.decode(encrypted_str.as_bytes())
+                    .map_err(|e| AetherError::RuntimeError(format!("Invalid encrypted data: {}", e)))?;
+                
+                if combined.len() < 12 {
+                    return Err(AetherError::RuntimeError("Invalid encrypted data: too short".to_string()));
+                }
+                
+                // Extract nonce and ciphertext
+                let (nonce_bytes, ciphertext) = combined.split_at(12);
+                let nonce = Nonce::from_slice(nonce_bytes);
+                
+                // Derive key
+                let mut hasher = Sha256::new();
+                hasher.update(key_str.as_bytes());
+                let key_bytes = hasher.finalize();
+                
+                // Create cipher
+                let cipher = Aes256Gcm::new((&key_bytes).into());
+                
+                // Decrypt
+                match cipher.decrypt(nonce, ciphertext) {
+                    Ok(plaintext) => {
+                        let text = String::from_utf8(plaintext)
+                            .map_err(|e| AetherError::RuntimeError(format!("Invalid UTF-8: {}", e)))?;
+                        Ok(Value::String(text))
+                    }
+                    Err(e) => Err(AetherError::RuntimeError(format!("Decryption failed: {}", e))),
+                }
+            }
+            
+            AstNode::Hash { data } => {
+                let data_val = self.eval_node(data)?;
+                
+                let bytes = match data_val {
+                    Value::String(s) => s.as_bytes().to_vec(),
+                    Value::Number(n) => n.to_string().as_bytes().to_vec(),
+                    _ => return Err(AetherError::RuntimeError("Hash requires string or number".to_string())),
+                };
+                
+                let mut hasher = Sha256::new();
+                hasher.update(&bytes);
+                let result = hasher.finalize();
+                
+                // Convert to hex string
+                let hex_string = format!("{:x}", result);
+                Ok(Value::String(hex_string))
+            }
+            
+            AstNode::Sign { data, key } => {
+                let data_val = self.eval_node(data)?;
+                let key_val = self.eval_node(key)?;
+                
+                let message = match data_val {
+                    Value::String(s) => s.as_bytes().to_vec(),
+                    _ => return Err(AetherError::RuntimeError("Sign requires string data".to_string())),
+                };
+                
+                let key_str = match key_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Sign requires string key".to_string())),
+                };
+                
+                // Derive signing key from string (in real impl, would use actual key)
+                let mut key_bytes = [0u8; 32];
+                let mut hasher = Sha256::new();
+                hasher.update(key_str.as_bytes());
+                key_bytes.copy_from_slice(&hasher.finalize()[..32]);
+                
+                let signing_key = SigningKey::from_bytes(&key_bytes);
+                let signature = signing_key.sign(&message);
+                
+                // Encode signature as base64
+                let sig_bytes = signature.to_bytes();
+                let encoded = BASE64.encode(&sig_bytes);
+                Ok(Value::String(encoded))
+            }
+            
+            AstNode::VerifySignature { signature, data, key } => {
+                let sig_val = self.eval_node(signature)?;
+                let data_val = self.eval_node(data)?;
+                let key_val = self.eval_node(key)?;
+                
+                let sig_str = match sig_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Verify requires string signature".to_string())),
+                };
+                
+                let message = match data_val {
+                    Value::String(s) => s.as_bytes().to_vec(),
+                    _ => return Err(AetherError::RuntimeError("Verify requires string data".to_string())),
+                };
+                
+                let key_str = match key_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Verify requires string key".to_string())),
+                };
+                
+                // Decode signature
+                let sig_bytes = BASE64.decode(sig_str.as_bytes())
+                    .map_err(|e| AetherError::RuntimeError(format!("Invalid signature: {}", e)))?;
+                
+                if sig_bytes.len() != 64 {
+                    return Err(AetherError::RuntimeError("Invalid signature length".to_string()));
+                }
+                
+                let mut sig_array = [0u8; 64];
+                sig_array.copy_from_slice(&sig_bytes);
+                let signature = Signature::from_bytes(&sig_array);
+                
+                // Derive verifying key (in real impl, would be public key)
+                let mut key_bytes = [0u8; 32];
+                let mut hasher = Sha256::new();
+                hasher.update(key_str.as_bytes());
+                key_bytes.copy_from_slice(&hasher.finalize()[..32]);
+                
+                let signing_key = SigningKey::from_bytes(&key_bytes);
+                let verifying_key = signing_key.verifying_key();
+                
+                // Verify signature
+                match verifying_key.verify(&message, &signature) {
+                    Ok(_) => Ok(Value::Boolean(true)),
+                    Err(_) => Ok(Value::Boolean(false)),
+                }
+            }
+            
+            // Math & Science (v1.2)
+            AstNode::Power { base, exponent } => {
+                let base_val = self.eval_node(base)?;
+                let exp_val = self.eval_node(exponent)?;
+                
+                let b = base_val.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Power requires number base".to_string()))?;
+                let e = exp_val.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Power requires number exponent".to_string()))?;
+                
+                Ok(Value::Number(b.powf(e)))
+            }
+            
+            AstNode::Root { value } => {
+                let val = self.eval_node(value)?;
+                
+                let n = val.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Root requires number".to_string()))?;
+                
+                if n < 0.0 {
+                    return Err(AetherError::RuntimeError("Cannot take square root of negative number".to_string()));
+                }
+                
+                Ok(Value::Number(n.sqrt()))
+            }
+            
+            AstNode::Approx { left, right } => {
+                let l = self.eval_node(left)?;
+                let r = self.eval_node(right)?;
+                
+                let left_num = l.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Approx requires numbers".to_string()))?;
+                let right_num = r.as_number()
+                    .ok_or_else(|| AetherError::RuntimeError("Approx requires numbers".to_string()))?;
+                
+                // Use relative epsilon for floating point comparison
+                let epsilon = f64::EPSILON * 10.0;
+                let approx_equal = (left_num - right_num).abs() < epsilon.max((left_num.abs() + right_num.abs()) * epsilon);
+                
+                Ok(Value::Boolean(approx_equal))
+            }
+            
+            AstNode::Infinity => {
+                Ok(Value::Number(f64::INFINITY))
+            }
+            
+            AstNode::Delta { name, value } => {
+                let val = self.eval_node(value)?;
+                let delta_name = format!("∆{}", name);
+                self.variables.insert(delta_name.clone(), val.clone());
+                Ok(val)
+            }
         }
     }
 
@@ -782,5 +1114,233 @@ mod tests {
         // Check that the import is recorded
         let import_key = "_imported_http";
         assert_eq!(runtime.get_variable(import_key), Some(&Value::Boolean(true)));
+    }
+    
+    // v1.2 Testing & Debugging tests
+    #[test]
+    fn test_runtime_test_suite() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Test {
+            name: "MyTest".to_string(),
+            body: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(42.0));
+    }
+    
+    #[test]
+    fn test_runtime_assert_pass() {
+        let mut runtime = Runtime::new();
+        
+        // True condition should pass
+        let node = AstNode::Assert {
+            condition: Box::new(AstNode::Literal(LiteralValue::Number(1.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+    }
+    
+    #[test]
+    fn test_runtime_assert_fail() {
+        let mut runtime = Runtime::new();
+        
+        // False condition should fail
+        let node = AstNode::Assert {
+            condition: Box::new(AstNode::Empty),
+        };
+        
+        let result = runtime.eval_node(&node);
+        assert!(result.is_err());
+    }
+    
+    #[test]
+    fn test_runtime_mock() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Mock {
+            target: Box::new(AstNode::Literal(LiteralValue::String("database".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+        assert!(runtime.mocked_targets.contains("database"));
+    }
+    
+    #[test]
+    fn test_runtime_benchmark() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Benchmark {
+            body: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(42.0));
+        
+        // Check that benchmark time was stored
+        let time = runtime.get_variable("_benchmark_time");
+        assert!(time.is_some());
+    }
+    
+    #[test]
+    fn test_runtime_debug() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Debug;
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Null);
+        assert!(runtime.debug_enabled);
+    }
+    
+    // v1.2 Security & Crypto tests
+    #[test]
+    fn test_runtime_encrypt_decrypt() {
+        let mut runtime = Runtime::new();
+        
+        // Encrypt
+        let encrypt_node = AstNode::Encrypt {
+            data: Box::new(AstNode::Literal(LiteralValue::String("secret message".to_string()))),
+            key: Box::new(AstNode::Literal(LiteralValue::String("my-key".to_string()))),
+        };
+        
+        let encrypted = runtime.eval_node(&encrypt_node).unwrap();
+        
+        // Should be a string
+        assert!(matches!(encrypted, Value::String(_)));
+        
+        // Decrypt
+        let decrypt_node = AstNode::Decrypt {
+            data: Box::new(AstNode::Literal(match encrypted {
+                Value::String(s) => LiteralValue::String(s),
+                _ => panic!("Expected string"),
+            })),
+            key: Box::new(AstNode::Literal(LiteralValue::String("my-key".to_string()))),
+        };
+        
+        let decrypted = runtime.eval_node(&decrypt_node).unwrap();
+        assert_eq!(decrypted, Value::String("secret message".to_string()));
+    }
+    
+    #[test]
+    fn test_runtime_hash() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Hash {
+            data: Box::new(AstNode::Literal(LiteralValue::String("test".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        
+        // Should be a hex string
+        if let Value::String(hash) = result {
+            assert_eq!(hash.len(), 64); // SHA-256 produces 64 hex characters
+            assert!(hash.chars().all(|c| c.is_ascii_hexdigit()));
+        } else {
+            panic!("Expected string hash");
+        }
+    }
+    
+    #[test]
+    fn test_runtime_sign_verify() {
+        let mut runtime = Runtime::new();
+        
+        let message = "important message";
+        let key = "signing-key";
+        
+        // Sign
+        let sign_node = AstNode::Sign {
+            data: Box::new(AstNode::Literal(LiteralValue::String(message.to_string()))),
+            key: Box::new(AstNode::Literal(LiteralValue::String(key.to_string()))),
+        };
+        
+        let signature = runtime.eval_node(&sign_node).unwrap();
+        assert!(matches!(signature, Value::String(_)));
+        
+        // Verify
+        let verify_node = AstNode::VerifySignature {
+            signature: Box::new(AstNode::Literal(match signature {
+                Value::String(s) => LiteralValue::String(s),
+                _ => panic!("Expected string"),
+            })),
+            data: Box::new(AstNode::Literal(LiteralValue::String(message.to_string()))),
+            key: Box::new(AstNode::Literal(LiteralValue::String(key.to_string()))),
+        };
+        
+        let verified = runtime.eval_node(&verify_node).unwrap();
+        assert_eq!(verified, Value::Boolean(true));
+    }
+    
+    // v1.2 Math & Science tests
+    #[test]
+    fn test_runtime_power() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Power {
+            base: Box::new(AstNode::Literal(LiteralValue::Number(2.0))),
+            exponent: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(8.0));
+    }
+    
+    #[test]
+    fn test_runtime_root() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Root {
+            value: Box::new(AstNode::Literal(LiteralValue::Number(16.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(4.0));
+    }
+    
+    #[test]
+    fn test_runtime_approx() {
+        let mut runtime = Runtime::new();
+        
+        // Test approximately equal numbers
+        let node = AstNode::Approx {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(0.1 + 0.2))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(0.3))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+    }
+    
+    #[test]
+    fn test_runtime_infinity() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Infinity;
+        
+        let result = runtime.eval_node(&node).unwrap();
+        if let Value::Number(n) = result {
+            assert!(n.is_infinite());
+        } else {
+            panic!("Expected number");
+        }
+    }
+    
+    #[test]
+    fn test_runtime_delta() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Delta {
+            name: "temp".to_string(),
+            value: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(5.0));
+        
+        // Check that delta variable was stored
+        assert_eq!(runtime.get_variable("∆temp"), Some(&Value::Number(5.0)));
     }
 }
