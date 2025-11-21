@@ -197,33 +197,40 @@ pub enum AstNode {
     /// HTTP Request operations
     HttpGet {
         url: Box<AstNode>,
+        headers: Option<Box<AstNode>>,
     },
     
     HttpPost {
         url: Box<AstNode>,
         body: Option<Box<AstNode>>,
+        headers: Option<Box<AstNode>>,
     },
     
     HttpPut {
         url: Box<AstNode>,
         body: Option<Box<AstNode>>,
+        headers: Option<Box<AstNode>>,
     },
     
     HttpDelete {
         url: Box<AstNode>,
+        headers: Option<Box<AstNode>>,
     },
     
     HttpPatch {
         url: Box<AstNode>,
         body: Option<Box<AstNode>>,
+        headers: Option<Box<AstNode>>,
     },
     
     HttpHead {
         url: Box<AstNode>,
+        headers: Option<Box<AstNode>>,
     },
     
     HttpOptions {
         url: Box<AstNode>,
+        headers: Option<Box<AstNode>>,
     },
     
     // Testing & Debugging (v1.2)
@@ -1060,8 +1067,14 @@ impl Parser {
                     if self.match_symbol(&Symbol::Input) {
                         // GET request: 🌐📥
                         let url = self.parse_primary()?;
+                        let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                            Some(Box::new(self.parse_primary()?))
+                        } else {
+                            None
+                        };
                         Ok(AstNode::HttpGet {
                             url: Box::new(url),
+                            headers,
                         })
                     } else if self.match_symbol(&Symbol::Output) {
                         // POST request: 🌐📤
@@ -1072,7 +1085,12 @@ impl Parser {
                         } else {
                             None
                         };
-                        Ok(AstNode::HttpPost { url: Box::new(url), body })
+                        let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                            Some(Box::new(self.parse_primary()?))
+                        } else {
+                            None
+                        };
+                        Ok(AstNode::HttpPost { url: Box::new(url), body, headers })
                     } else {
                         Ok(AstNode::Variable("http".to_string()))
                     }
@@ -1081,8 +1099,14 @@ impl Parser {
                 TokenType::Symbol(Symbol::HttpGet) => {
                     self.advance();
                     let url = self.parse_primary()?;
+                    let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
                     Ok(AstNode::HttpGet {
                         url: Box::new(url),
+                        headers,
                     })
                 }
                 
@@ -1094,7 +1118,12 @@ impl Parser {
                     } else {
                         None
                     };
-                    Ok(AstNode::HttpPost { url: Box::new(url), body })
+                    let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
+                    Ok(AstNode::HttpPost { url: Box::new(url), body, headers })
                 }
                 
                 TokenType::Symbol(Symbol::HttpPut) => {
@@ -1105,14 +1134,25 @@ impl Parser {
                     } else {
                         None
                     };
-                    Ok(AstNode::HttpPut { url: Box::new(url), body })
+                    let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
+                    Ok(AstNode::HttpPut { url: Box::new(url), body, headers })
                 }
                 
                 TokenType::Symbol(Symbol::HttpDelete) => {
                     self.advance();
                     let url = self.parse_primary()?;
+                    let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
                     Ok(AstNode::HttpDelete {
                         url: Box::new(url),
+                        headers,
                     })
                 }
                 
@@ -1124,22 +1164,39 @@ impl Parser {
                     } else {
                         None
                     };
-                    Ok(AstNode::HttpPatch { url: Box::new(url), body })
+                    let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
+                    Ok(AstNode::HttpPatch { url: Box::new(url), body, headers })
                 }
                 
                 TokenType::Symbol(Symbol::HttpHead) => {
                     self.advance();
                     let url = self.parse_primary()?;
+                    let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
                     Ok(AstNode::HttpHead {
                         url: Box::new(url),
+                        headers,
                     })
                 }
                 
                 TokenType::Symbol(Symbol::HttpOptions) => {
                     self.advance();
                     let url = self.parse_primary()?;
+                    let headers = if self.match_symbol(&Symbol::HttpHeaders) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
                     Ok(AstNode::HttpOptions {
                         url: Box::new(url),
+                        headers,
                     })
                 }
                 

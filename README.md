@@ -66,6 +66,7 @@ Aether GlyphCode (~20 characters):
 | `🗄` | Map | Map/Dictionary |
 | `∅` | Empty | Null/Empty value |
 | `🌐` | HTTP | HTTP request (generic) |
+| `🏷️` | Headers | HTTP headers (key-value pairs) |
 | `🌐📥` | HTTP GET | HTTP GET request |
 | `🌐📤` | HTTP POST | HTTP POST request |
 | `🌐🔄` | HTTP PUT | HTTP PUT request |
@@ -224,8 +225,9 @@ Aether v1.5 introduces **comprehensive HTTP client support** with full method co
 **Key Features:**
 - ✅ Secure HTTPS with rustls (no OpenSSL dependency)
 - ✅ All standard HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS)
+- ✅ Custom HTTP headers support with 🏷️ symbol
 - ✅ JSON request/response support
-- ✅ Automatic response parsing with status, body, and JSON fields
+- ✅ Automatic response parsing with status, body, headers, and JSON fields
 - ✅ Async execution under the hood with tokio runtime
 
 **Example - Simple API Request:**
@@ -236,6 +238,13 @@ Aether v1.5 introduces **comprehensive HTTP client support** with full method co
 **Example - POST with JSON:**
 ```aether
 🌐📤 "https://httpbin.org/post" ⇢ '{"name":"Aether","version":"1.5"}' ▷ result ⨠ 📤 result
+```
+
+**Example - Request with Custom Headers:**
+```aether
+// Note: Headers syntax uses 🏷️ followed by an object with header key-value pairs
+// Headers must be provided as an object/map structure
+🌐📥 "https://api.example.com/data" 🏷️ headers_object ▷ result
 ```
 
 **Example - Full CRUD Operations:**
@@ -258,6 +267,7 @@ Aether v1.5 introduces **comprehensive HTTP client support** with full method co
 {
   "status": 200,
   "ok": true,
+  "headers": { "content-type": "application/json", ... },
   "body": "response text...",
   "json": { ... }  // Present if body is valid JSON
 }

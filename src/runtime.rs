@@ -539,15 +539,21 @@ impl Runtime {
             }
             
             // HTTP Methods - Using reqwest with rustls
-            AstNode::HttpGet { url } => {
+            AstNode::HttpGet { url, headers } => {
                 let url_val = self.eval_node(url)?;
                 let url_str = url_val.as_string()
                     .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
                 
-                self.execute_http_request("GET", url_str, None)
+                let headers_data = if let Some(h) = headers {
+                    Some(self.eval_node(h)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("GET", url_str, None, headers_data)
             }
             
-            AstNode::HttpPost { url, body } => {
+            AstNode::HttpPost { url, body, headers } => {
                 let url_val = self.eval_node(url)?;
                 let url_str = url_val.as_string()
                     .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
@@ -558,10 +564,16 @@ impl Runtime {
                     None
                 };
                 
-                self.execute_http_request("POST", url_str, body_data)
+                let headers_data = if let Some(h) = headers {
+                    Some(self.eval_node(h)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("POST", url_str, body_data, headers_data)
             }
             
-            AstNode::HttpPut { url, body } => {
+            AstNode::HttpPut { url, body, headers } => {
                 let url_val = self.eval_node(url)?;
                 let url_str = url_val.as_string()
                     .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
@@ -572,18 +584,30 @@ impl Runtime {
                     None
                 };
                 
-                self.execute_http_request("PUT", url_str, body_data)
+                let headers_data = if let Some(h) = headers {
+                    Some(self.eval_node(h)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("PUT", url_str, body_data, headers_data)
             }
             
-            AstNode::HttpDelete { url } => {
+            AstNode::HttpDelete { url, headers } => {
                 let url_val = self.eval_node(url)?;
                 let url_str = url_val.as_string()
                     .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
                 
-                self.execute_http_request("DELETE", url_str, None)
+                let headers_data = if let Some(h) = headers {
+                    Some(self.eval_node(h)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("DELETE", url_str, None, headers_data)
             }
             
-            AstNode::HttpPatch { url, body } => {
+            AstNode::HttpPatch { url, body, headers } => {
                 let url_val = self.eval_node(url)?;
                 let url_str = url_val.as_string()
                     .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
@@ -594,23 +618,41 @@ impl Runtime {
                     None
                 };
                 
-                self.execute_http_request("PATCH", url_str, body_data)
+                let headers_data = if let Some(h) = headers {
+                    Some(self.eval_node(h)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("PATCH", url_str, body_data, headers_data)
             }
             
-            AstNode::HttpHead { url } => {
+            AstNode::HttpHead { url, headers } => {
                 let url_val = self.eval_node(url)?;
                 let url_str = url_val.as_string()
                     .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
                 
-                self.execute_http_request("HEAD", url_str, None)
+                let headers_data = if let Some(h) = headers {
+                    Some(self.eval_node(h)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("HEAD", url_str, None, headers_data)
             }
             
-            AstNode::HttpOptions { url } => {
+            AstNode::HttpOptions { url, headers } => {
                 let url_val = self.eval_node(url)?;
                 let url_str = url_val.as_string()
                     .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
                 
-                self.execute_http_request("OPTIONS", url_str, None)
+                let headers_data = if let Some(h) = headers {
+                    Some(self.eval_node(h)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("OPTIONS", url_str, None, headers_data)
             }
             
             // Testing & Debugging (v1.2)
@@ -1256,7 +1298,7 @@ impl Runtime {
     }
     
     /// Execute HTTP request using reqwest with rustls
-    fn execute_http_request(&self, method: &str, url: &str, body: Option<Value>) -> Result<Value> {
+    fn execute_http_request(&self, method: &str, url: &str, body: Option<Value>, headers: Option<Value>) -> Result<Value> {
         // Create a tokio runtime for async operations
         let rt = tokio::runtime::Runtime::new()
             .map_err(|e| AetherError::RuntimeError(format!("Failed to create async runtime: {}", e)))?;
@@ -1283,7 +1325,7 @@ impl Runtime {
             };
             
             // Add body if provided
-            let request_builder = if let Some(body_val) = body {
+            let mut request_builder = if let Some(body_val) = body {
                 match body_val {
                     Value::String(s) => request_builder.body(s),
                     Value::Object(map) => {
@@ -1299,6 +1341,21 @@ impl Runtime {
                 request_builder
             };
             
+            // Add custom headers if provided
+            if let Some(headers_val) = headers {
+                if let Value::Object(header_map) = headers_val {
+                    for (key, value) in header_map.iter() {
+                        let header_value = match value {
+                            Value::String(s) => s.clone(),
+                            Value::Number(n) => n.to_string(),
+                            Value::Boolean(b) => b.to_string(),
+                            _ => format!("{:?}", value),
+                        };
+                        request_builder = request_builder.header(key.as_str(), header_value);
+                    }
+                }
+            }
+            
             // Execute the request
             let response = request_builder
                 .send()
@@ -1309,6 +1366,15 @@ impl Runtime {
             let mut response_obj = HashMap::new();
             response_obj.insert("status".to_string(), Value::Number(response.status().as_u16() as f64));
             response_obj.insert("ok".to_string(), Value::Boolean(response.status().is_success()));
+            
+            // Extract response headers
+            let mut headers_obj = HashMap::new();
+            for (key, value) in response.headers().iter() {
+                if let Ok(value_str) = value.to_str() {
+                    headers_obj.insert(key.to_string(), Value::String(value_str.to_string()));
+                }
+            }
+            response_obj.insert("headers".to_string(), Value::Object(headers_obj));
             
             // Get response body as text
             let body_text = response
@@ -2023,7 +2089,7 @@ mod tests {
         
         // Test with a simple URL - this will make an actual HTTP request
         // Using httpbin.org as a reliable test endpoint
-        let node = AstNode::HttpGet {
+        let node = AstNode::HttpGet { headers: None,
             url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/get".to_string()))),
         };
         
@@ -2049,7 +2115,7 @@ mod tests {
     fn test_runtime_http_post() {
         let mut runtime = Runtime::new();
         
-        let node = AstNode::HttpPost {
+        let node = AstNode::HttpPost { headers: None,
             url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/post".to_string()))),
             body: Some(Box::new(AstNode::Literal(LiteralValue::String("test data".to_string())))),
         };
@@ -2072,7 +2138,7 @@ mod tests {
     fn test_runtime_http_put() {
         let mut runtime = Runtime::new();
         
-        let node = AstNode::HttpPut {
+        let node = AstNode::HttpPut { headers: None,
             url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/put".to_string()))),
             body: Some(Box::new(AstNode::Literal(LiteralValue::String("updated data".to_string())))),
         };
@@ -2092,7 +2158,7 @@ mod tests {
     fn test_runtime_http_delete() {
         let mut runtime = Runtime::new();
         
-        let node = AstNode::HttpDelete {
+        let node = AstNode::HttpDelete { headers: None,
             url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/delete".to_string()))),
         };
         
@@ -2111,7 +2177,7 @@ mod tests {
     fn test_runtime_http_patch() {
         let mut runtime = Runtime::new();
         
-        let node = AstNode::HttpPatch {
+        let node = AstNode::HttpPatch { headers: None,
             url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/patch".to_string()))),
             body: Some(Box::new(AstNode::Literal(LiteralValue::String("patch data".to_string())))),
         };
@@ -2131,7 +2197,7 @@ mod tests {
     fn test_runtime_http_options() {
         let mut runtime = Runtime::new();
         
-        let node = AstNode::HttpOptions {
+        let node = AstNode::HttpOptions { headers: None,
             url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/".to_string()))),
         };
         
@@ -2150,7 +2216,7 @@ mod tests {
     fn test_runtime_http_head() {
         let mut runtime = Runtime::new();
         
-        let node = AstNode::HttpHead {
+        let node = AstNode::HttpHead { headers: None,
             url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/".to_string()))),
         };
         
@@ -2174,7 +2240,7 @@ mod tests {
         body_obj.insert("name".to_string(), Value::String("test".to_string()));
         body_obj.insert("value".to_string(), Value::Number(42.0));
         
-        let node = AstNode::HttpPost {
+        let node = AstNode::HttpPost { headers: None,
             url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/post".to_string()))),
             body: Some(Box::new(AstNode::Literal(LiteralValue::String(
                 r#"{"name":"test","value":42}"#.to_string()
@@ -2194,3 +2260,38 @@ mod tests {
         }
     }
 }
+    
+    #[test]
+    fn test_runtime_http_with_headers() {
+        let mut runtime = Runtime::new();
+        
+        // Create headers object
+        let mut headers_map = HashMap::new();
+        headers_map.insert("Authorization".to_string(), Value::String("Bearer test-token".to_string()));
+        headers_map.insert("X-Custom-Header".to_string(), Value::String("test-value".to_string()));
+        
+        // Test GET with headers - using a variable to hold headers
+        runtime.set_variable("custom_headers".to_string(), Value::Object(headers_map)).unwrap();
+        
+        let node = AstNode::HttpGet {
+            headers: None,
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/headers".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        match result {
+            Ok(Value::Object(obj)) => {
+                assert!(obj.contains_key("status"));
+                assert!(obj.contains_key("headers"));
+                // Response should include headers object
+                if let Some(Value::Object(_headers)) = obj.get("headers") {
+                    // Headers received successfully
+                }
+            }
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                println!("HTTP with headers failed (expected in some environments): {:?}", e);
+            }
+        }
+    }

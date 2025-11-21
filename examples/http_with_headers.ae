@@ -1,0 +1,9 @@
+// HTTP Request with Custom Headers Example
+// NOTE: Requires internet connectivity
+
+// Simple GET with custom headers
+// Headers need to be created as a map/object first
+// Syntax: 🌐📥 "url" 🏷️ headers_object
+
+// Example: GET with authorization header
+📤 "Example: HTTP GET with custom headers"

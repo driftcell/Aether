@@ -67,6 +67,8 @@ pub enum Symbol {
     // Network operations
     /// 🌐 - HTTP request (generic)
     HttpRequest,
+    /// 🏷️ - HTTP Headers
+    HttpHeaders,
     /// 🌐📥 - HTTP GET request
     HttpGet,
     /// 🌐📤 - HTTP POST request
@@ -277,6 +279,7 @@ impl Symbol {
             "🗄" => Some(Symbol::Map),
             "∅" => Some(Symbol::Empty),
             "🌐" => Some(Symbol::HttpRequest),
+            "🏷️" => Some(Symbol::HttpHeaders),
             "®" => Some(Symbol::Register),
             // Control Flow & Iteration
             "↻" => Some(Symbol::Loop),
@@ -383,6 +386,7 @@ impl Symbol {
             Symbol::Map => "🗄".to_string(),
             Symbol::Empty => "∅".to_string(),
             Symbol::HttpRequest => "🌐".to_string(),
+            Symbol::HttpHeaders => "🏷️".to_string(),
             Symbol::HttpGet => "🌐📥".to_string(),
             Symbol::HttpPost => "🌐📤".to_string(),
             Symbol::HttpPut => "🌐🔄".to_string(),
@@ -500,6 +504,7 @@ impl Symbol {
             Symbol::Map => "Map/Dictionary",
             Symbol::Empty => "Empty/null value",
             Symbol::HttpRequest => "HTTP request (generic)",
+            Symbol::HttpHeaders => "HTTP headers (key-value pairs)",
             Symbol::HttpGet => "HTTP GET request",
             Symbol::HttpPost => "HTTP POST request",
             Symbol::HttpPut => "HTTP PUT request",
