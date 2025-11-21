@@ -1,6 +1,7 @@
 //! Aether CLI - Command line interface for the Aether programming language
 
 use aether::{Lexer, Parser, Runtime, Compiler, VM, BytecodeProgram, Explainer, LANGUAGE_NAME, VERSION};
+use glob;
 use std::env;
 use std::fs;
 use std::io::{BufReader, BufWriter};
@@ -511,7 +512,8 @@ fn explain_file(filename: &str) {
     println!("\n🔣 Aether Code:");
     println!("{}", "-".repeat(80));
     for line in source.lines() {
-        if !line.trim().is_empty() && !line.trim().starts_with("//") {
+        let trimmed = line.trim();
+        if !trimmed.is_empty() && !trimmed.starts_with("//") {
             println!("{}", line);
         }
     }

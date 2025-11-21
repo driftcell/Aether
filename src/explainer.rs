@@ -411,7 +411,58 @@ impl Explainer {
                 format!("{}enable debug mode", self.indent())
             }
             
-            _ => format!("{}[unknown operation]", self.indent()),
+            // File System (v1.3) - Additional operations not yet fully explained
+            AstNode::FileHandle { .. } => format!("{}file handle", self.indent()),
+            AstNode::Directory { .. } => format!("{}directory", self.indent()),
+            AstNode::PathResolve { .. } => format!("{}path resolution", self.indent()),
+            AstNode::AppendContent { .. } => format!("{}append to file", self.indent()),
+            AstNode::DeleteFile { .. } => format!("{}delete file", self.indent()),
+            AstNode::SetPermission { .. } => format!("{}set file permissions", self.indent()),
+            
+            // Streams & Buffers (v1.3)
+            AstNode::CreateStream { .. } => format!("{}create stream", self.indent()),
+            AstNode::CreateBuffer { .. } => format!("{}create buffer", self.indent()),
+            AstNode::FlushBuffer { .. } => format!("{}flush buffer", self.indent()),
+            AstNode::EndOfFile => format!("{}end of file", self.indent()),
+            AstNode::SkipBytes { .. } => format!("{}skip bytes", self.indent()),
+            
+            // Networking (v1.3)
+            AstNode::CreateSocket { .. } => format!("{}create socket", self.indent()),
+            AstNode::ListenPort { .. } => format!("{}listen on port", self.indent()),
+            AstNode::ConnectRemote { .. } => format!("{}connect to remote", self.indent()),
+            AstNode::PortNumber { .. } => format!("{}port number", self.indent()),
+            AstNode::CreatePacket { .. } => format!("{}create packet", self.indent()),
+            AstNode::Handshake { .. } => format!("{}handshake", self.indent()),
+            
+            // Process & OS (v1.3)
+            AstNode::ProcessCreate { .. } => format!("{}create process", self.indent()),
+            AstNode::MemoryAlloc { .. } => format!("{}allocate memory", self.indent()),
+            AstNode::ExitProgram { .. } => format!("{}exit program", self.indent()),
+            AstNode::SendSignal { .. } => format!("{}send signal", self.indent()),
+            
+            // Other operations
+            AstNode::PropertyAccess { object, property } => {
+                format!("{}.{}", self.explain_node(object), property)
+            }
+            
+            // Additional operations
+            AstNode::Thread { .. } => format!("{}thread", self.indent()),
+            AstNode::Lock { .. } => format!("{}lock", self.indent()),
+            AstNode::Emit { .. } => format!("{}emit event", self.indent()),
+            AstNode::Watch { .. } => format!("{}watch event", self.indent()),
+            AstNode::Auth { .. } => format!("{}authenticate", self.indent()),
+            AstNode::Test { .. } => format!("{}test", self.indent()),
+            AstNode::Mock { .. } => format!("{}mock", self.indent()),
+            AstNode::Benchmark { .. } => format!("{}benchmark", self.indent()),
+            AstNode::Encrypt { .. } => format!("{}encrypt", self.indent()),
+            AstNode::Decrypt { .. } => format!("{}decrypt", self.indent()),
+            AstNode::Sign { .. } => format!("{}sign", self.indent()),
+            AstNode::VerifySignature { .. } => format!("{}verify signature", self.indent()),
+            AstNode::Infinity => "infinity".to_string(),
+            AstNode::Delta { .. } => format!("{}delta", self.indent()),
+            AstNode::HttpPatch { .. } => format!("{}HTTP PATCH", self.indent()),
+            AstNode::HttpHead { .. } => format!("{}HTTP HEAD", self.indent()),
+            AstNode::HttpOptions { .. } => format!("{}HTTP OPTIONS", self.indent()),
         }
     }
     
