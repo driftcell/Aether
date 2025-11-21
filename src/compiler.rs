@@ -5,6 +5,9 @@ use crate::error::{AetherError, Result};
 use crate::parser::{AstNode, LiteralValue};
 use std::collections::HashMap;
 
+/// Special variable name used for piped values in AST
+const PIPE_VARIABLE: &str = "_pipe";
+
 /// Compiler context
 pub struct Compiler {
     program: BytecodeProgram,
@@ -47,7 +50,7 @@ impl Compiler {
             AstNode::Variable(name) => {
                 // Special handling for _pipe variable used in pipe operations
                 // In bytecode, the piped value is already on the stack
-                if name == "_pipe" {
+                if name == PIPE_VARIABLE {
                     // Don't emit LoadVar - value is already on stack from Pipe source
                     // No-op: the value is already where it needs to be
                 } else {
