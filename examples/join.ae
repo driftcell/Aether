@@ -1,0 +1,2 @@
+// Array join (using split result)
+"apple,banana,cherry" ⇢ ✂"," ▷ arr ⨠ arr ⇢ 🔗" | " ▷ joined ⨠ 📤joined

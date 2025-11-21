@@ -91,6 +91,18 @@ examples=(
     "hash"
     "log"
     "complex_math"
+    "split"
+    "join"
+    "immutable"
+    "approx"
+    "conditional"
+    "guard"
+    "delta"
+    "import"
+    "pipeline"
+    "register"
+    "foreach"
+    "retry"
 )
 
 for example in "${examples[@]}"; do

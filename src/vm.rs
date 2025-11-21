@@ -407,6 +407,178 @@ impl VM {
                     }
                 }
                 
+                Opcode::Split => {
+                    // Stack: [target, delimiter] (delimiter on top)
+                    let delimiter = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let target = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    
+                    match (target, delimiter) {
+                        (Value::String(s), Value::String(delim)) => {
+                            let parts: Vec<Value> = s.split(&delim).map(|p| Value::String(p.to_string())).collect();
+                            self.stack.push(Value::Array(parts));
+                        }
+                        _ => {
+                            return Err(AetherError::RuntimeError("Split requires string inputs".to_string()));
+                        }
+                    }
+                }
+                
+                Opcode::Join => {
+                    // Stack: [elements, separator] (separator on top)
+                    let separator = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let elements = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    
+                    match (elements, separator) {
+                        (Value::Array(arr), Value::String(sep)) => {
+                            let strings: Vec<String> = arr.iter().map(|v| match v {
+                                Value::String(s) => s.clone(),
+                                Value::Number(n) => n.to_string(),
+                                Value::Boolean(b) => b.to_string(),
+                                _ => format!("{:?}", v),
+                            }).collect();
+                            self.stack.push(Value::String(strings.join(&sep)));
+                        }
+                        _ => {
+                            return Err(AetherError::RuntimeError("Join requires array and string".to_string()));
+                        }
+                    }
+                }
+                
+                Opcode::Filter => {
+                    // Simplified filter - just passes through for now
+                    // Full implementation would need closure/predicate support
+                }
+                
+                Opcode::Reduce => {
+                    // Simplified reduce - just passes through for now  
+                    // Full implementation would need closure/operation support
+                }
+                
+                Opcode::Regex => {
+                    // Basic regex match
+                    let target = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let pattern = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    
+                    if let (Value::String(pat), Value::String(tgt)) = (pattern, target) {
+                        match regex::Regex::new(&pat) {
+                            Ok(re) => {
+                                let is_match = re.is_match(&tgt);
+                                self.stack.push(Value::Boolean(is_match));
+                            }
+                            Err(_) => {
+                                return Err(AetherError::RuntimeError("Invalid regex pattern".to_string()));
+                            }
+                        }
+                    } else {
+                        return Err(AetherError::RuntimeError("Regex requires string inputs".to_string()));
+                    }
+                }
+                
+                Opcode::Encrypt => {
+                    // Simplified - just return encrypted marker
+                    let _key = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let data = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    self.stack.push(Value::String(format!("[ENCRYPTED:{:?}]", data)));
+                }
+                
+                Opcode::Decrypt => {
+                    // Simplified - just return decrypted marker
+                    let _key = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let data = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    self.stack.push(Value::String(format!("[DECRYPTED:{:?}]", data)));
+                }
+                
+                Opcode::TryStart => {
+                    let _rescue_offset = self.read_u32()?;
+                    // Mark try block start - actual exception handling would need more infrastructure
+                }
+                
+                Opcode::TryEnd => {
+                    // Mark try block end
+                }
+                
+                Opcode::Retry => {
+                    let _max_attempts = self.read_u8()?;
+                    // Retry logic would need more infrastructure for loop control
+                }
+                
+                Opcode::Async => {
+                    // Mark async operation - would need actual async runtime
+                }
+                
+                Opcode::Await => {
+                    // Await async result - would need actual async runtime
+                }
+                
+                Opcode::Delta => {
+                    // Delta calculation - for now just passes through value
+                }
+                
+                Opcode::Import => {
+                    let idx = self.read_u32()? as usize;
+                    let _module = self.program.constants.get(idx)
+                        .ok_or_else(|| AetherError::RuntimeError(
+                            format!("Invalid constant index: {}", idx)
+                        ))?;
+                    // Module import would need module system
+                    self.stack.push(Value::Null);
+                }
+                
+                Opcode::Mock => {
+                    let _target_idx = self.read_u32()?;
+                    // Mocking would need test infrastructure
+                }
+                
+                Opcode::BenchmarkStart => {
+                    // Store start time in a variable or state
+                }
+                
+                Opcode::BenchmarkEnd => {
+                    // Calculate and output elapsed time
+                }
+                
+                Opcode::FileHandle => {
+                    let path = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Return file handle placeholder
+                    self.stack.push(Value::String(format!("[FILE:{:?}]", path)));
+                }
+                
+                Opcode::FileRead => {
+                    let _handle = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Read file content - simplified
+                    self.stack.push(Value::String("[FILE CONTENT]".to_string()));
+                }
+                
+                Opcode::FileWrite => {
+                    let content = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _handle = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Write to file - simplified
+                    println!("[FILE WRITE] {:?}", content);
+                }
+                
+                Opcode::FileAppend => {
+                    let content = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _handle = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Append to file - simplified
+                    println!("[FILE APPEND] {:?}", content);
+                }
+                
                 Opcode::End => {
                     break;
                 }

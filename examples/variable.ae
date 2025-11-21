@@ -1,2 +1,2 @@
-// Variable test - simplified
-📤 "test"
+// Variable binding with pipe
+"Hello" ▷ x ⨠ x ▷ y ⨠ 📤y
