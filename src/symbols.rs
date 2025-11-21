@@ -49,6 +49,10 @@ pub enum Symbol {
     // Conditionals
     /// ◇ - If/conditional
     If,
+    /// ◈ - ElseIf/conditional alternative
+    ElseIf,
+    /// ◆ - Else/default branch
+    Else,
     /// ⊕ - Or
     Or,
     /// ⊗ - And
@@ -272,6 +276,8 @@ impl Symbol {
             "✓" => Some(Symbol::Success),
             "⨠" => Some(Symbol::Sequence),
             "◇" => Some(Symbol::If),
+            "◈" => Some(Symbol::ElseIf),
+            "◆" => Some(Symbol::Else),
             "⊕" => Some(Symbol::Or),
             "⊗" => Some(Symbol::And),
             "¬" => Some(Symbol::Not),
@@ -379,6 +385,8 @@ impl Symbol {
             Symbol::Success => "✓".to_string(),
             Symbol::Sequence => "⨠".to_string(),
             Symbol::If => "◇".to_string(),
+            Symbol::ElseIf => "◈".to_string(),
+            Symbol::Else => "◆".to_string(),
             Symbol::Or => "⊕".to_string(),
             Symbol::And => "⊗".to_string(),
             Symbol::Not => "¬".to_string(),
@@ -496,7 +504,9 @@ impl Symbol {
             Symbol::Halt => "Halt/terminate with error",
             Symbol::Success => "Success/validate",
             Symbol::Sequence => "Sequence operations",
-            Symbol::If => "Conditional",
+            Symbol::If => "Conditional (if)",
+            Symbol::ElseIf => "Conditional alternative (else if)",
+            Symbol::Else => "Default branch (else)",
             Symbol::Or => "Logical OR",
             Symbol::And => "Logical AND",
             Symbol::Not => "Logical NOT",
@@ -838,6 +848,7 @@ mod tests {
     fn test_http_method_symbols() {
         let symbols = vec![
             (Symbol::HttpRequest, "🌐", "HTTP request (generic)"),
+            (Symbol::HttpHeaders, "🏷️", "HTTP headers (key-value pairs)"),
             (Symbol::HttpGet, "🌐📥", "HTTP GET request"),
             (Symbol::HttpPost, "🌐📤", "HTTP POST request"),
             (Symbol::HttpPut, "🌐🔄", "HTTP PUT request"),
@@ -849,6 +860,24 @@ mod tests {
         
         for (symbol, expected_str, expected_desc) in symbols {
             assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_conditional_symbols() {
+        let symbols = vec![
+            (Symbol::If, "◇", "Conditional (if)"),
+            (Symbol::ElseIf, "◈", "Conditional alternative (else if)"),
+            (Symbol::Else, "◆", "Default branch (else)"),
+            (Symbol::Or, "⊕", "Logical OR"),
+            (Symbol::And, "⊗", "Logical AND"),
+            (Symbol::Not, "¬", "Logical NOT"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
             assert_eq!(symbol.description(), expected_desc);
         }
     }
