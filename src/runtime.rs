@@ -1505,7 +1505,7 @@ impl Runtime {
                     "3600s".to_string()
                 };
                 
-                println!("Caching {:?} with TTL {}", key_val, ttl_str);
+                println!("Caching {:?} = {:?} with TTL {}", key_val, val_val, ttl_str);
                 Ok(val_val)
             }
             
