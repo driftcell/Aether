@@ -499,8 +499,8 @@ data ⇢ ✂"," ⇢ x̄ ⇢ 📋"Result: {}" ⇢ 📤
 ### 4. Contextual Overloading
 
 Some symbols have different meanings in different module contexts:
-- `📤`: Output (base) vs Unpack (🧩🗜️)
-- `⚖️`: Assert (🧩🧪 testing) vs SizeOf (🧩🗜️ compression)
+- `📤`: Output (base language) vs Unpack (🧩🗜️ Compression module)
+- `⚖️`: Assert (base language v1.2 testing) vs SizeOf (🧩🗜️ Compression module)
 
 The import context determines interpretation.
 
