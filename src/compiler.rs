@@ -45,9 +45,16 @@ impl Compiler {
             AstNode::Literal(lit) => self.compile_literal(lit)?,
             
             AstNode::Variable(name) => {
-                let idx = self.program.add_constant(name.clone());
-                self.program.emit_opcode(Opcode::LoadVar);
-                self.program.emit_u32(idx);
+                // Special handling for _pipe variable used in pipe operations
+                // In bytecode, the piped value is already on the stack
+                if name == "_pipe" {
+                    // Don't emit LoadVar - value is already on stack from Pipe source
+                    // No-op: the value is already where it needs to be
+                } else {
+                    let idx = self.program.add_constant(name.clone());
+                    self.program.emit_opcode(Opcode::LoadVar);
+                    self.program.emit_u32(idx);
+                }
             }
             
             AstNode::Input => {
@@ -295,17 +302,32 @@ impl Compiler {
             }
             
             AstNode::Split { target, delimiter } => {
-                self.compile_node(target)?;
+                // If target is Empty, it means we're using the piped value (already on stack)
+                // Otherwise, compile the target normally
+                if !matches!(target.as_ref(), AstNode::Empty) {
+                    self.compile_node(target)?;
+                }
+                // If delimiter is provided, compile it; otherwise the opcode will use default
                 if let Some(delim) = delimiter {
                     self.compile_node(delim)?;
+                } else {
+                    // Push default delimiter (empty string or space)
+                    self.compile_literal(&LiteralValue::String(" ".to_string()))?;
                 }
                 self.program.emit_opcode(Opcode::Split);
             }
             
             AstNode::Join { elements, separator } => {
-                self.compile_node(elements)?;
+                // If elements is Empty, it means we're using the piped value (already on stack)
+                if !matches!(elements.as_ref(), AstNode::Empty) {
+                    self.compile_node(elements)?;
+                }
+                // If separator is provided, compile it; otherwise use default
                 if let Some(sep) = separator {
                     self.compile_node(sep)?;
+                } else {
+                    // Push default separator (empty string)
+                    self.compile_literal(&LiteralValue::String("".to_string()))?;
                 }
                 self.program.emit_opcode(Opcode::Join);
             }

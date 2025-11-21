@@ -1152,10 +1152,26 @@ impl Parser {
                 }
                 TokenType::Symbol(Symbol::Root) => {
                     self.advance();
-                    let value = self.parse_primary()?;
-                    Ok(AstNode::Root {
-                        value: Box::new(value),
-                    })
+                    // Check if we're in a pipe context (next token is not a primary)
+                    // If so, use _pipe variable; otherwise parse the value
+                    let value = if let Some(token) = self.peek() {
+                        match &token.token_type {
+                            TokenType::Symbol(Symbol::PipeInto) |
+                            TokenType::Symbol(Symbol::Sequence) |
+                            TokenType::Eof => {
+                                // In pipe context, use piped value
+                                Box::new(AstNode::Variable("_pipe".to_string()))
+                            }
+                            _ => {
+                                // Parse explicit value
+                                Box::new(self.parse_primary()?)
+                            }
+                        }
+                    } else {
+                        // No token following, use piped value
+                        Box::new(AstNode::Variable("_pipe".to_string()))
+                    };
+                    Ok(AstNode::Root { value })
                 }
                 TokenType::Symbol(Symbol::Approx) => {
                     self.advance();
