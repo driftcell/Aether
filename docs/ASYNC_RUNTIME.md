@@ -177,13 +177,18 @@ tokio::runtime::Runtime::new()
 3. **No Cancellation**: Once started, tasks cannot be cancelled
    - Cancellation support planned for future
 
+4. **Polling-based Await**: Current implementation uses polling (10ms intervals) to check task completion
+   - Future versions will use more efficient notification mechanisms (e.g., `tokio::sync::Notify`)
+   - Maximum wait time is 10 seconds before timeout
+
 ### Future Enhancements
 
 - [ ] Full AST evaluation in async context
+- [ ] Efficient async notifications (replace polling)
 - [ ] Task cancellation support
 - [ ] Async channels for task communication
 - [ ] Async iterators
-- [ ] Timeout configuration
+- [ ] Configurable timeout values
 - [ ] Task priorities
 
 ## Testing
