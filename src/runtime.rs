@@ -19,6 +19,7 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 
 // HTTP client import
 use reqwest;
+use serde_json;
 
 /// Runtime value
 #[derive(Debug, Clone, PartialEq)]
@@ -1326,56 +1327,74 @@ impl Runtime {
         })
     }
     
-    /// Helper to convert Value to JSON string
+    /// Helper to convert Value to JSON string using serde_json
     fn value_to_json_string(&self, value: &Value) -> String {
+        // Convert our Value to serde_json::Value
+        let json_value = self.value_to_serde_json(value);
+        // Serialize to string
+        serde_json::to_string(&json_value).unwrap_or_else(|_| "null".to_string())
+    }
+    
+    /// Convert Aether Value to serde_json::Value
+    fn value_to_serde_json(&self, value: &Value) -> serde_json::Value {
         match value {
-            Value::String(s) => format!("\"{}\"", s.replace('"', "\\\"")),
-            Value::Number(n) => n.to_string(),
-            Value::Boolean(b) => b.to_string(),
-            Value::Null => "null".to_string(),
+            Value::String(s) => serde_json::Value::String(s.clone()),
+            Value::Number(n) => {
+                if let Some(n_val) = serde_json::Number::from_f64(*n) {
+                    serde_json::Value::Number(n_val)
+                } else {
+                    serde_json::Value::Null
+                }
+            }
+            Value::Boolean(b) => serde_json::Value::Bool(*b),
+            Value::Null => serde_json::Value::Null,
             Value::Array(items) => {
-                let items_str: Vec<String> = items.iter()
-                    .map(|v| self.value_to_json_string(v))
+                let json_items: Vec<serde_json::Value> = items.iter()
+                    .map(|v| self.value_to_serde_json(v))
                     .collect();
-                format!("[{}]", items_str.join(","))
+                serde_json::Value::Array(json_items)
             }
             Value::Object(map) => {
-                let pairs: Vec<String> = map.iter()
-                    .map(|(k, v)| format!("\"{}\":{}", k, self.value_to_json_string(v)))
+                let json_map: serde_json::Map<String, serde_json::Value> = map.iter()
+                    .map(|(k, v)| (k.clone(), self.value_to_serde_json(v)))
                     .collect();
-                format!("{{{}}}", pairs.join(","))
+                serde_json::Value::Object(json_map)
             }
         }
     }
     
-    /// Helper to parse JSON string to Value
+    /// Helper to parse JSON string to Value using serde_json
     fn parse_json_string(&self, json: &str) -> Result<Value> {
-        // Simple JSON parsing for basic types
-        let trimmed = json.trim();
-        
-        if trimmed == "null" {
-            return Ok(Value::Null);
+        // Parse using serde_json
+        match serde_json::from_str::<serde_json::Value>(json) {
+            Ok(json_val) => Ok(self.serde_json_to_value(&json_val)),
+            Err(_) => {
+                // If parsing fails, return as string
+                Ok(Value::String(json.to_string()))
+            }
         }
-        
-        if trimmed == "true" {
-            return Ok(Value::Boolean(true));
+    }
+    
+    /// Convert serde_json::Value to Aether Value
+    fn serde_json_to_value(&self, json: &serde_json::Value) -> Value {
+        match json {
+            serde_json::Value::Null => Value::Null,
+            serde_json::Value::Bool(b) => Value::Boolean(*b),
+            serde_json::Value::Number(n) => Value::Number(n.as_f64().unwrap_or(0.0)),
+            serde_json::Value::String(s) => Value::String(s.clone()),
+            serde_json::Value::Array(arr) => {
+                let items: Vec<Value> = arr.iter()
+                    .map(|v| self.serde_json_to_value(v))
+                    .collect();
+                Value::Array(items)
+            }
+            serde_json::Value::Object(obj) => {
+                let map: HashMap<String, Value> = obj.iter()
+                    .map(|(k, v)| (k.clone(), self.serde_json_to_value(v)))
+                    .collect();
+                Value::Object(map)
+            }
         }
-        
-        if trimmed == "false" {
-            return Ok(Value::Boolean(false));
-        }
-        
-        if let Ok(num) = trimmed.parse::<f64>() {
-            return Ok(Value::Number(num));
-        }
-        
-        if trimmed.starts_with('"') && trimmed.ends_with('"') {
-            let s = &trimmed[1..trimmed.len()-1];
-            return Ok(Value::String(s.to_string()));
-        }
-        
-        // For complex JSON, return as string
-        Ok(Value::String(json.to_string()))
     }
 
     /// Set a variable in the runtime environment
