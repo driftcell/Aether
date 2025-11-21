@@ -203,36 +203,9 @@ Aether v1.3 introduces **26 new symbols** focused on system-level programming, I
 
 ## 🆕 What's New in v1.4
 
-Aether v1.4 introduces the **Aether Standard Library (ASL)** - a comprehensive documentation of standard library modules following the **"Import as Capability"** principle.
+Aether v1.4 introduces the **Aether Standard Library (ASL)** - a comprehensive collection of high-leverage modules representing optimized universal capabilities. The ASL follows the **"Import as Capability"** principle using the `🧩` (Puzzle Piece) symbol.
 
 ### Standard Library Modules (6 core modules)
-
-The ASL provides high-leverage, composable modules imported via `🧩`:
-
-1. **🧩🧮 Math** - Mathematics & Statistics (π, e, x̄, σ, ∫, ∂, M)
-2. **🧩📝 Text** - Text & Encoding (🔡, 🔠, 📋, 6️⃣4️⃣, 🆔)
-3. **🧩⏰ Chrono** - Time & Scheduling (⏳, 🗓️, ⏰, ∆t)
-4. **🧩🗜️ Compression** - Compression & Archiving (📦, 📤, ⚖️)
-5. **🧩🧠 AI & Tensor** - Cognition & Tensors (▦, 🕸️, 🤖, 🏋️)
-6. **🧩🌐 Net+** - Advanced Networking (🔌⇄, 📧, ☁️)
-
-**Example - AI-Powered Image Service:**
-```aether
-🧩🧠 🧩🗜️ 🧩🌐 ⨠
-ƒ handle: 📥img ⨠
-  (img ⇢ 🤖"describe") ▷ desc ⨠  // AI recognition
-  img ⇢ 📦 ▷ zip ⨠               // Compress
-  zip ⇢ ☁️"s3://images" ⨠        // Upload to S3
-  📤desc                         // Return description
-```
-
-See [STANDARD_LIBRARY.md](docs/STANDARD_LIBRARY.md) for complete documentation.
-
-## 📚 Standard Library (ASL)
-
-Aether v1.4 introduces the **Aether Standard Library (ASL)** - a collection of high-leverage modules representing optimized universal capabilities. The ASL follows the **"Import as Capability"** principle using the `🧩` symbol.
-
-### Core Modules
 
 | Module | Symbol | Description | Example |
 |--------|--------|-------------|---------|
@@ -243,7 +216,7 @@ Aether v1.4 introduces the **Aether Standard Library (ASL)** - a collection of h
 | **AI & Tensor** | `🧩🧠` | AI Inference & Tensors | `🧩🧠 ⨠ "text" ⇢ 🤖` |
 | **Net+** | `🧩🌐` | Advanced Networking | `🧩🌐 ⨠ 🔌⇄(url)` |
 
-### Quick Example
+### Examples
 
 **Data Analysis Pipeline** - Read CSV, calculate average, format output:
 ```aether
@@ -252,6 +225,16 @@ Aether v1.4 introduces the **Aether Standard Library (ASL)** - a collection of h
 rows ⇢ ∀(r): (r ⇢ ✂"," ▷ cols ⇢ cols[2]) ▷ values ⨠
 values ⇢ x̄ ▷ avg ⨠
 "Average: {}" ⇢ 📋avg ⇢ 📤
+```
+
+**AI-Powered Image Service** - Recognition, compression, cloud storage:
+```aether
+🧩🧠 🧩🗜️ 🧩🌐 ⨠
+ƒ handle: 📥img ⨠
+  (img ⇢ 🤖"describe") ▷ desc ⨠  // AI recognition
+  img ⇢ 📦 ▷ zip ⨠               // Compress
+  zip ⇢ ☁️"s3://images" ⨠        // Upload to S3
+  📤desc                         // Return description
 ```
 
 For complete documentation, see [Standard Library Documentation](docs/STANDARD_LIBRARY.md).

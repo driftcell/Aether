@@ -188,9 +188,9 @@ Handles data stream compression and decompression.
 | Symbol | Description | Example |
 |--------|-------------|---------|
 | `📦` | Pack (Zip/Gzip) | `file ⇢ 📦 ▷ compressed` |
-| `📤` | Unpack (Unzip) | `data ⇢ 📤 ▷ uncompressed` |
+| `📤` | Unpack (Unzip) | `compressed ⇢ 📤 ▷ data` |
 
-**Note**: `📤` is overloaded - it means Output in base language, but Unpack in Compression module context.
+**Note**: Within the Compression module context, `📤` takes on the meaning of Unpack/Decompress. In base Aether, `📤` means Output/Return. The context (whether the Compression module is imported) determines the behavior.
 
 ### Size Operations
 
@@ -198,7 +198,7 @@ Handles data stream compression and decompression.
 |--------|-------------|---------|
 | `⚖️` | SizeOf | `data ⇢ ⚖️ ▷ size` |
 
-**Note**: `⚖️` is also used for Assert in Testing module - context determines meaning.
+**Note**: `⚖️` means SizeOf in the Compression module. In the base language (v1.2), `⚖️` is used for Assert in testing contexts. Context determines meaning.
 
 ### Complete Example
 
