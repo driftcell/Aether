@@ -32,6 +32,7 @@ pub mod bytecode;
 pub mod compiler;
 pub mod vm;
 pub mod constants;
+pub mod explainer;
 
 pub use error::{AetherError, Result};
 pub use lexer::{Lexer, Token, TokenType};
@@ -41,6 +42,7 @@ pub use symbols::Symbol;
 pub use bytecode::{BytecodeProgram, Opcode};
 pub use compiler::Compiler;
 pub use vm::VM;
+pub use explainer::Explainer;
 
 /// Version information for the Aether language
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

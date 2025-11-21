@@ -28,6 +28,9 @@ reqwest = { version = "0.12", features = ["rustls-tls", "json"], default-feature
 tokio = { version = "1.42", features = ["rt-multi-thread", "macros", "time"] }
 serde_json = "1.0"
 
+# File globbing
+glob = "0.3"
+
 [dev-dependencies]
 # Testing utilities
 
