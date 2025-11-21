@@ -530,4 +530,65 @@ mod tests {
         assert_eq!(compiler.program.code[0], Opcode::LoadVar.to_byte());
         assert_eq!(compiler.program.constants[0], "test");
     }
+    
+    #[test]
+    fn test_compile_power() {
+        let source = "2 ⇢ ↑3".to_string();
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let program = compiler.compile(ast).unwrap();
+        
+        // Should compile to: PushNumber 2, PushNumber 3, Power
+        assert!(!program.code.is_empty());
+    }
+    
+    #[test]
+    fn test_compile_root() {
+        let source = "16 ⇢ √".to_string();
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let program = compiler.compile(ast).unwrap();
+        
+        // Should compile without error
+        assert!(!program.code.is_empty());
+    }
+    
+    #[test]
+    fn test_compile_split() {
+        let source = "\"a,b,c\" ⇢ ✂\",\"".to_string();
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let program = compiler.compile(ast).unwrap();
+        
+        // Should have two constants: the string and delimiter
+        assert_eq!(program.constants.len(), 2);
+        assert!(!program.code.is_empty());
+    }
+    
+    #[test]
+    fn test_compile_pipe_into() {
+        let source = "\"test\" ▷ x".to_string();
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let program = compiler.compile(ast).unwrap();
+        
+        // Should have variable name in constants
+        assert!(program.constants.contains(&"x".to_string()));
+    }
 }
