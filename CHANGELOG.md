@@ -2,6 +2,59 @@
 
 All notable changes to Aether will be documented in this file.
 
+## [v1.6] - Async Runtime with Tokio
+
+Aether v1.6 introduces **full async/await runtime** powered by tokio, enabling true concurrent execution for the ⚡ (Async) and ⏳ (Await) symbols.
+
+### New Features
+- ✅ **True Async Execution**: Tasks run concurrently using tokio's multi-threaded runtime
+- ✅ **Async Task Handles**: Tasks return handle values that can be stored and awaited
+- ✅ **Multiple Concurrent Tasks**: Create and manage multiple async tasks simultaneously
+- ✅ **Non-blocking Await**: Await operator retrieves task results when complete
+- ✅ **Task Result Storage**: Async results are properly stored and retrievable
+
+### Async Symbols
+- `⚡` (U+26A1) - Async/Trigger: Execute code asynchronously
+- `⏳` (U+23F3) - Await: Wait for async operation to complete
+
+### Examples
+
+**Basic Async Task:**
+```aether
+⚡ 📤 "Hello from async task!"
+```
+Returns: `AsyncTask("task_1")`
+
+**Async with Await:**
+```aether
+⚡ 📤 "Computing..." ▷ task ⨠ ⏳ task
+```
+Returns: `String("Computing...")`
+
+**Multiple Concurrent Tasks:**
+```aether
+⚡ 📤 "Task 1" ▷ t1 ⨠ ⚡ 📤 "Task 2" ▷ t2 ⨠ ⚡ 📤 "Task 3" ▷ t3 ⨠ ⏳ t1 ⨠ ⏳ t2 ⨠ ⏳ t3
+```
+Returns: `String("Task 3")`
+
+### Technical Details
+- Uses tokio runtime with multi-threaded scheduler
+- Tasks execute via `spawn_blocking` for CPU-bound work
+- Automatic task ID generation and management
+- Result polling with timeout protection
+- Arc/Mutex for thread-safe task result storage
+
+### Documentation
+- 📘 Full async guide: [docs/ASYNC_RUNTIME.md](docs/ASYNC_RUNTIME.md)
+- 🧪 New tests: `test_runtime_async`, `test_runtime_async_multiple_tasks`, `test_runtime_async_with_output`
+- 📝 Examples: `examples/async_basic.ae`, `examples/async_await.ae`, `examples/async_multiple.ae`
+
+### Dependencies
+- Updated `tokio` features to include `"time"` for async delays
+- All existing dependencies remain compatible
+
+---
+
 ## [v1.5] - HTTP Client Support
 
 Aether v1.5 introduces **comprehensive HTTP client support** with full method coverage using reqwest and rustls for secure HTTPS.
