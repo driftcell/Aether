@@ -1,0 +1,8 @@
+// Schedule Example - ⏰ Alarm Clock operator
+// Schedule tasks using cron expressions
+
+// Daily task at midnight
+⏰"0 0 * * *": 📤"Daily cleanup task executed"
+
+// Every hour task
+// ⏰"0 * * * *": 📤"Hourly sync completed"

@@ -1,0 +1,8 @@
+// Sleep Example - 💤 Sleep operator  
+// Pause execution for specified duration
+
+// Sleep for 2 seconds
+💤"2s" ⨠ 📤"Woke up after 2 seconds"
+
+// Sleep in milliseconds
+// 💤"500ms" ⨠ 📤"Quick nap completed"

@@ -2,6 +2,141 @@
 
 All notable changes to Aether will be documented in this file.
 
+## [v1.7] - AI, Cloud & Time Operators (Unreleased)
+
+Aether v1.7 extends the language with **AI-native operations**, **cloud-native primitives**, and **enhanced time control**, making it the first truly AI-first programming language.
+
+### AI & Tensor Core (v1.4)
+
+New symbols for AI operations:
+- `🧠` (U+1F9E0) - **Inference/Model Call**: Execute AI model inference with OpenAI-compatible APIs
+- `🧬` (U+1F9EC) - **Embedding/Vectorize**: Convert text to vector embeddings
+- `📐` (U+1F4D0) - **Tensor/Matrix**: Define tensors and matrices
+- `🛤️` (U+1F6E4 U+FE0F) - **Vector Search/KNN**: Perform vector similarity search
+
+**AI Integration:**
+- OpenAI-compatible API support via environment variables
+- `AETHER_API_KEY` - API authentication
+- `AETHER_BASE_URL` - Custom API endpoint (default: OpenAI)
+- `AETHER_MODEL` - Default model selection
+- Full support for chat completions and embeddings endpoints
+
+**Examples:**
+```aether
+// AI Inference
+"What is the capital of France?" ⇢ 🧠 ▷ result ⨠ 📤result
+
+// Text Embedding
+"Hello World" ⇢ 🧬 ▷ vector ⨠ 📤vector
+
+// Tensor Creation
+📐"[3,3]" ▷ matrix ⨠ 📤matrix
+
+// Vector Search
+query ⇢ 🧬 ⇢ 🛤️(docs, 5) ▷ results
+```
+
+### Cloud & Distributed (v1.5)
+
+New symbols for cloud-native operations:
+- `📬` (U+1F4EC) - **Message Queue/Pub-Sub**: Publish to message queues
+- `☁️` (U+2601 U+FE0F) - **Serverless/Deploy**: Mark functions for cloud deployment
+- `🏎️` (U+1F3CE U+FE0F) - **Cache**: High-speed caching with TTL
+- `🩺` (U+1FA7A) - **Health Check/Heartbeat**: Define health endpoints
+
+**Examples:**
+```aether
+// Message Queue
+orderData ⇢ 📬"orders-queue"
+
+// Cloud Function
+☁️ ƒprocess: 📥 ⇢ 🧠 ⇢ 📤
+
+// Caching with TTL
+userData ⇢ 🏎️("1h")
+
+// Health Check
+🩺: 📤"OK"
+```
+
+### Time & Scheduler (v1.6)
+
+New symbols for time control:
+- `💤` (U+1F4A4) - **Sleep/Delay**: Pause execution for specified duration
+- `⏰` (U+23F0) - **Schedule/Cron**: Define scheduled tasks with cron expressions
+- `⌛` (U+231B) - **Timeout/Deadline**: Set timeouts for operations
+
+**Time Formats:**
+- Milliseconds: `"100ms"`
+- Seconds: `"5s"`
+- Minutes: `"2m"`
+- Hours: `"1h"`
+
+**Examples:**
+```aether
+// Sleep
+💤"2s" ⨠ 📤"Woke up"
+
+// Scheduled Task
+⏰"0 0 * * *": 📤"Daily task"
+
+// Timeout
+⌛"5s": 🌐📥url ▷ data
+```
+
+### Complete AI-Powered Example
+
+```aether
+// Health check
+🩺: 📤"OK"
+
+// Search with AI, caching, and timeout
+ƒsearch: 
+  📥 ⇢ J ▷ query ⨠
+  ⌛"5s": (
+    query ⇢ 🧬 ▷ vec ⨠
+    vec ⇢ 🛤️(docs, 10) ▷ results ⨠
+    results ⇢ 🧠"gpt-4" ▷ summary ⨠
+    summary ⇢ 🏎️("1h") ⨠
+    📤summary
+  )
+
+// Scheduled cleanup
+⏰"0 * * * *": 📤"Cache cleaned"
+```
+
+### New Tests
+- ✅ 10+ new runtime tests for AI, Cloud, and Time operators
+- ✅ Symbol roundtrip tests for all new symbols
+- ✅ Duration parsing tests (ms, s, m, h)
+- ✅ Sleep, cache, mailbox, tensor operations
+
+### New Examples
+- `examples/ai_inference.ae` - AI model inference
+- `examples/embedding.ae` - Text embeddings
+- `examples/tensor.ae` - Tensor operations
+- `examples/message_queue.ae` - Message queue pub/sub
+- `examples/cache.ae` - Caching with TTL
+- `examples/health_check.ae` - Health endpoints
+- `examples/sleep.ae` - Sleep/delay operations
+- `examples/schedule.ae` - Scheduled tasks
+- `examples/timeout.ae` - Timeout constraints
+
+### Documentation
+- 📘 Updated [docs/SYMBOL_REFERENCE.md](docs/SYMBOL_REFERENCE.md) with 11 new symbols
+- 📝 Complete AI-powered search API example
+- 🔧 Environment variable configuration guide
+- ⚙️ OpenAI API integration documentation
+
+### Technical Details
+- Uses `reqwest` for HTTP API calls to AI services
+- Environment-based configuration for flexibility
+- Duration parsing supports ms, s, m, h units
+- Timeout implementation using tokio runtime
+- Placeholder implementations for tensor and vector search (ready for backend integration)
+
+---
+
 ## [v1.6] - Async Runtime with Tokio
 
 Aether v1.6 introduces **full async/await runtime** powered by tokio, enabling true concurrent execution for the ⚡ (Async) and ⏳ (Await) symbols.

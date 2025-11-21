@@ -3016,4 +3016,119 @@ mod tests {
             }
         }
     }
+    
+    #[test]
+    fn test_runtime_sleep() {
+        let mut runtime = Runtime::new();
+        
+        // Test sleep with string duration "100ms"
+        let node = AstNode::Sleep {
+            duration: Box::new(AstNode::Literal(LiteralValue::String("100ms".to_string()))),
+        };
+        
+        let start = std::time::Instant::now();
+        let result = runtime.eval_node(&node);
+        let elapsed = start.elapsed();
+        
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Null);
+        assert!(elapsed.as_millis() >= 90); // Allow small margin
+    }
+    
+    #[test]
+    fn test_runtime_parse_duration() {
+        let runtime = Runtime::new();
+        
+        assert_eq!(runtime.parse_duration("100ms").unwrap(), 100);
+        assert_eq!(runtime.parse_duration("2s").unwrap(), 2000);
+        assert_eq!(runtime.parse_duration("1m").unwrap(), 60000);
+        assert_eq!(runtime.parse_duration("1h").unwrap(), 3600000);
+    }
+    
+    #[test]
+    fn test_runtime_tensor() {
+        let mut runtime = Runtime::new();
+        
+        // Test tensor creation with dimensions
+        let node = AstNode::Tensor {
+            dimensions: Box::new(AstNode::Literal(LiteralValue::String("[3,3]".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        assert!(result.is_ok());
+        // Should return an array (placeholder for now)
+        match result.unwrap() {
+            Value::Array(_) => {},
+            _ => panic!("Expected array result"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_mailbox() {
+        let mut runtime = Runtime::new();
+        
+        // Test publishing to message queue
+        let node = AstNode::Mailbox {
+            data: Box::new(AstNode::Literal(LiteralValue::String("test message".to_string()))),
+            topic: Box::new(AstNode::Literal(LiteralValue::String("orders-queue".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Boolean(true));
+    }
+    
+    #[test]
+    fn test_runtime_racing_car_cache() {
+        let mut runtime = Runtime::new();
+        
+        // Test caching with TTL
+        let node = AstNode::RacingCarCache {
+            key: Box::new(AstNode::Literal(LiteralValue::String("user:123".to_string()))),
+            value: Box::new(AstNode::Literal(LiteralValue::String("cached data".to_string()))),
+            ttl: Some(Box::new(AstNode::Literal(LiteralValue::String("3600s".to_string())))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        assert!(result.is_ok());
+        match result.unwrap() {
+            Value::String(s) => assert_eq!(s, "cached data"),
+            _ => panic!("Expected string result"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_stethoscope() {
+        let mut runtime = Runtime::new();
+        
+        // Test health check endpoint
+        let node = AstNode::Stethoscope {
+            body: Box::new(AstNode::Output(Box::new(AstNode::Literal(LiteralValue::String("OK".to_string()))))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        assert!(result.is_ok());
+        match result.unwrap() {
+            Value::String(s) => assert_eq!(s, "OK"),
+            _ => panic!("Expected string result"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_alarm_clock() {
+        let mut runtime = Runtime::new();
+        
+        // Test scheduled task
+        let node = AstNode::AlarmClock {
+            schedule: Box::new(AstNode::Literal(LiteralValue::String("0 0 * * *".to_string()))),
+            body: Box::new(AstNode::Literal(LiteralValue::String("task executed".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        assert!(result.is_ok());
+        match result.unwrap() {
+            Value::String(s) => assert_eq!(s, "task executed"),
+            _ => panic!("Expected string result"),
+        }
+    }
 }

@@ -1,0 +1,8 @@
+// Tensor Example - 📐 Tensor operator
+// Creates a tensor/matrix with specified dimensions
+
+// Create a 3x3 matrix
+📐"[3,3]" ▷ matrix ⨠ 📤 matrix
+
+// Create a tensor for neural network
+// 📐"[1,128,128,3]" ▷ imageTensor

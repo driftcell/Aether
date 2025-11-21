@@ -1,0 +1,8 @@
+// Timeout Example - ⌛ Hourglass operator
+// Execute with a timeout constraint
+
+// Operation with 3 second timeout
+⌛"3s": 💤"1s" ⨠ 📤"Completed within timeout"
+
+// This would timeout (if sleep was 5s)
+// ⌛"2s": 💤"5s" ⨠ 📤"This won't execute"

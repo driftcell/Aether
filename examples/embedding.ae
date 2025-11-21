@@ -1,0 +1,9 @@
+// Embedding Example - 🧬 DNA operator
+// Converts text to vector embedding
+// Requires: AETHER_API_KEY, AETHER_BASE_URL environment variables
+
+// Simple embedding
+"Hello World" ⇢ 🧬 ▷ vector ⨠ 📤 vector
+
+// Embedding for search
+// "machine learning fundamentals" ⇢ 🧬 ▷ queryVec

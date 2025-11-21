@@ -1,0 +1,8 @@
+// Message Queue Example - 📬 Mailbox operator
+// Publish messages to a topic/queue
+
+// Publish order data to queue
+"Order #12345 completed" ⇢ 📬"orders-queue" ▷ success ⨠ 📤 success
+
+// Publish to events topic
+// "User logged in" ⇢ 📬"events-topic"

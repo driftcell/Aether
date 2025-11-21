@@ -1,0 +1,8 @@
+// Cache Example - 🏎️ Racing Car operator
+// Fast cache operations with TTL support
+
+// Cache user data with 1 hour TTL
+"User profile data" ▷ userData ⨠ userData ⇢ 🏎️("1h") ▷ cached ⨠ 📤 cached
+
+// Cache without explicit TTL (default)
+// "Session data" ⇢ 🏎️()

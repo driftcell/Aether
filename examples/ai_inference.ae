@@ -1,0 +1,8 @@
+// AI Inference Example - 🧠 Brain operator
+// Requires: AETHER_API_KEY, AETHER_BASE_URL, AETHER_MODEL environment variables
+
+// Simple inference with default model
+"What is the capital of France?" ⇢ 🧠 ▷ result ⨠ 📤 result
+
+// Inference with specific model
+// "Explain quantum computing in simple terms" ⇢ 🧠 "gpt-4" ▷ answer ⨠ 📤 answer

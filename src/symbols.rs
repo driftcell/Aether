@@ -951,4 +951,51 @@ mod tests {
             assert_eq!(symbol.description(), expected_desc);
         }
     }
+    
+    #[test]
+    fn test_ai_tensor_symbols() {
+        let symbols = vec![
+            (Symbol::Brain, "🧠", "AI Inference/Model Call"),
+            (Symbol::Dna, "🧬", "Embedding/Vectorize text to vector"),
+            (Symbol::Tensor, "📐", "Tensor/Matrix definition"),
+            (Symbol::Track, "🛤️", "Vector Search/KNN similarity search"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_cloud_distributed_symbols() {
+        let symbols = vec![
+            (Symbol::Mailbox, "📬", "Message Queue/Pub-Sub"),
+            (Symbol::Cloud, "☁️", "Serverless/Cloud function deployment"),
+            (Symbol::RacingCar, "🏎️", "Cache/Fast access (Redis-like)"),
+            (Symbol::Stethoscope, "🩺", "Health Check/Heartbeat endpoint"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_time_scheduler_symbols() {
+        let symbols = vec![
+            (Symbol::Sleep, "💤", "Sleep/Delay execution"),
+            (Symbol::AlarmClock, "⏰", "Schedule/Cron task"),
+            (Symbol::Hourglass, "⌛", "Timeout/Deadline constraint"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
+            assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
 }

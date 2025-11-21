@@ -1,0 +1,8 @@
+// Health Check Example - 🩺 Stethoscope operator
+// Defines a health check endpoint
+
+// Simple health check
+🩺: 📤"OK"
+
+// Detailed health check
+// 🩺: 📥 ⨠ 📤"Healthy - All systems operational"

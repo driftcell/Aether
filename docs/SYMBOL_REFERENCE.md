@@ -2156,6 +2156,328 @@ console.log(output);
 
 ---
 
+## AI & Tensor Core (v1.4)
+
+### 🧠 - Inference (Model Call)
+
+**Symbol**: `🧠` (Brain)  
+**Unicode**: U+1F9E0  
+**Purpose**: Call AI model for inference/completion
+
+**Syntax**:
+```aether
+prompt ⇢ 🧠model
+```
+
+**Example**:
+```aether
+"Translate to French: Hello" ⇢ 🧠"gpt-4" ▷ result ⨠ 📤result
+```
+
+**Environment Variables**:
+- `AETHER_API_KEY` - API key for authentication (required)
+- `AETHER_BASE_URL` - Base URL for API (default: https://api.openai.com/v1)
+- `AETHER_MODEL` - Default model name (default: gpt-3.5-turbo)
+
+---
+
+### 🧬 - Embedding (Vectorize)
+
+**Symbol**: `🧬` (DNA)  
+**Unicode**: U+1F9EC  
+**Purpose**: Convert text to vector embedding
+
+**Syntax**:
+```aether
+text ⇢ 🧬
+```
+
+**Example**:
+```aether
+"Hello World" ⇢ 🧬 ▷ vector ⨠ 📤vector
+```
+
+**Environment Variables**:
+- `AETHER_API_KEY` - API key for authentication (required)
+- `AETHER_BASE_URL` - Base URL for API
+- `AETHER_EMBEDDING_MODEL` - Embedding model (default: text-embedding-ada-002)
+
+---
+
+### 📐 - Tensor/Matrix
+
+**Symbol**: `📐` (Triangular Ruler)  
+**Unicode**: U+1F4D0  
+**Purpose**: Define tensor or matrix
+
+**Syntax**:
+```aether
+📐[dimensions]
+```
+
+**Example**:
+```aether
+📐"[3,3]" ▷ matrix ⨠ 📤matrix
+```
+
+Creates a 3x3 matrix placeholder
+
+---
+
+### 🛤️ - Vector Search (KNN)
+
+**Symbol**: `🛤️` (Railway Track)  
+**Unicode**: U+1F6E4 U+FE0F  
+**Purpose**: Vector similarity search
+
+**Syntax**:
+```aether
+queryVector ⇢ 🛤️(collection, top_k)
+```
+
+**Example**:
+```aether
+userQuery ⇢ 🧬 ⇢ 🛤️(db.docs, 5) ▷ relevantDocs ⨠ 📤relevantDocs
+```
+
+Returns top 5 most similar documents
+
+---
+
+## Cloud & Distributed (v1.5)
+
+### 📬 - Message Queue (Pub/Sub)
+
+**Symbol**: `📬` (Open Mailbox with Raised Flag)  
+**Unicode**: U+1F4EC  
+**Purpose**: Publish messages to queue/topic
+
+**Syntax**:
+```aether
+data ⇢ 📬"topic"
+```
+
+**Example**:
+```aether
+orderData ⇢ 📬"orders-queue" ▷ success ⨠ 📤success
+```
+
+Publishes order data to the orders queue
+
+---
+
+### ☁️ - Serverless/Deploy
+
+**Symbol**: `☁️` (Cloud)  
+**Unicode**: U+2601 U+FE0F  
+**Purpose**: Mark code for serverless deployment
+
+**Syntax**:
+```aether
+☁️ ƒname: body
+```
+
+**Example**:
+```aether
+☁️ ƒprocess: 📥 ⇢ 🧠 ⇢ 📤
+```
+
+Defines a cloud function for AI inference
+
+---
+
+### 🏎️ - Cache (Fast Access)
+
+**Symbol**: `🏎️` (Racing Car)  
+**Unicode**: U+1F3CE U+FE0F  
+**Purpose**: High-speed cache operations (Redis-like)
+
+**Syntax**:
+```aether
+key ⇢ 🏎️(ttl)
+```
+
+**Example**:
+```aether
+userData ⇢ 🏎️("1h") ▷ cached ⨠ 📤cached
+```
+
+Caches user data for 1 hour
+
+---
+
+### 🩺 - Health Check / Heartbeat
+
+**Symbol**: `🩺` (Stethoscope)  
+**Unicode**: U+1FA7A  
+**Purpose**: System health check endpoint
+
+**Syntax**:
+```aether
+🩺: body
+```
+
+**Example**:
+```aether
+🩺: 📤"OK"
+```
+
+Defines a health check endpoint returning "OK"
+
+---
+
+## Time & Scheduler (v1.6)
+
+### 💤 - Sleep/Delay
+
+**Symbol**: `💤` (Zzz)  
+**Unicode**: U+1F4A4  
+**Purpose**: Pause execution
+
+**Syntax**:
+```aether
+💤duration
+```
+
+**Example**:
+```aether
+💤"5s" ⨠ 📤"Done"
+```
+
+Sleeps for 5 seconds. Supports: ms (milliseconds), s (seconds), m (minutes), h (hours)
+
+---
+
+### ⏰ - Schedule/Cron
+
+**Symbol**: `⏰` (Alarm Clock)  
+**Unicode**: U+23F0  
+**Purpose**: Scheduled tasks (cron-like)
+
+**Syntax**:
+```aether
+⏰"cron_expr": body
+```
+
+**Example**:
+```aether
+⏰"0 0 * * *": 📤"Daily cleanup"
+```
+
+Executes daily at midnight (cron expression: minute hour day month weekday)
+
+---
+
+### ⌛ - Timeout (Deadline)
+
+**Symbol**: `⌛` (Hourglass Done)  
+**Unicode**: U+231B  
+**Purpose**: Set timeout/deadline for operations
+
+**Syntax**:
+```aether
+⌛duration: body
+```
+
+**Example**:
+```aether
+⌛"2s": 🌐📥url ▷ data ⨠ 📤data
+```
+
+HTTP request with 2-second timeout, throws error if exceeded
+
+---
+
+## Complete Example: AI-Powered Search API
+
+This example combines AI, Cloud, and Time operators:
+
+**Requirements:**
+1. Accept search query
+2. Generate embedding for query
+3. Perform vector search with timeout
+4. Call AI to summarize results
+5. Cache result
+6. Health check endpoint
+
+**Aether v1.4-v1.6 Implementation:**
+```aether
+// Health check
+🩺: 📤"OK"
+
+// Search function with caching and timeout
+ƒsearch: 
+  📥 ⇢ J ▷ query ⨠
+  ⌛"5s": (
+    query ⇢ 🧬 ▷ vec ⨠
+    vec ⇢ 🛤️(docs, 10) ▷ results ⨠
+    results ⇢ 🧠"gpt-4" ▷ summary ⨠
+    summary ⇢ 🏎️("1h") ▷ cached ⨠
+    📤cached
+  )
+
+// Scheduled cache cleanup
+⏰"0 * * * *": 📤"Cache cleaned"
+```
+
+**Breakdown:**
+1. `🩺: 📤"OK"` - Health check returns OK
+2. `ƒsearch:` - Define search function
+3. `📥 ⇢ J ▷ query` - Get input and parse JSON
+4. `⌛"5s":` - 5-second timeout for operation
+5. `query ⇢ 🧬 ▷ vec` - Convert query to embedding
+6. `vec ⇢ 🛤️(docs, 10)` - Vector search top 10 results
+7. `results ⇢ 🧠"gpt-4"` - AI summarizes results
+8. `summary ⇢ 🏎️("1h")` - Cache for 1 hour
+9. `📤cached` - Return cached result
+10. `⏰"0 * * * *":` - Hourly scheduled task
+11. `📤"Cache cleaned"` - Execute cleanup
+
+**Equivalent Traditional Code:**
+```python
+from openai import OpenAI
+import redis
+import time
+from timeout_decorator import timeout
+
+client = OpenAI(api_key=os.getenv("AETHER_API_KEY"))
+cache = redis.Redis()
+
+@app.route("/health")
+def health():
+    return "OK"
+
+@app.route("/search", methods=["POST"])
+@timeout(5)  # 5 second timeout
+def search():
+    query = request.json
+    
+    # Generate embedding
+    vec = client.embeddings.create(
+        input=query,
+        model="text-embedding-ada-002"
+    ).data[0].embedding
+    
+    # Vector search
+    results = vector_db.search(vec, limit=10)
+    
+    # AI summarize
+    summary = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": str(results)}]
+    ).choices[0].message.content
+    
+    # Cache
+    cache.setex("search:" + query, 3600, summary)
+    
+    return summary
+
+# Scheduled task (separate cron job)
+# 0 * * * * python cleanup_cache.py
+```
+
+---
+
 ## Tips for Using Symbols
 
 ### Input Methods
@@ -2207,6 +2529,15 @@ All symbols are UTF-8 encoded:
 - **Streams & Buffers**: 5 new symbols for stream processing, buffers, flushing, EOF detection, and seeking
 - **Networking**: 6 new symbols for sockets, listening, connecting, ports, packets, and handshakes
 - **Process & OS**: 6 new symbols for process management, shell execution, environment variables, memory allocation, exit, and signals
+
+**Aether v1.4** adds:
+- **AI & Tensor Core**: 4 new symbols for AI inference, embeddings, tensors, and vector search
+
+**Aether v1.5** adds:
+- **Cloud & Distributed**: 4 new symbols for message queues, serverless deployment, caching, and health checks
+
+**Aether v1.6** adds:
+- **Time & Scheduler**: 3 new symbols for sleep/delay, scheduled tasks, and timeouts
 
 This encoding allows maximum information density while maintaining compatibility with modern text systems.
 
