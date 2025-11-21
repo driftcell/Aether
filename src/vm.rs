@@ -604,28 +604,42 @@ impl VM {
                 }
                 
                 Opcode::FileRead => {
-                    let _handle = self.stack.pop()
+                    let source = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // Read file content - simplified
-                    self.stack.push(Value::String("[FILE CONTENT]".to_string()));
+                    if let Value::String(path) = source {
+                        let content = self.read_file(&path)?;
+                        self.stack.push(Value::String(content));
+                    } else {
+                        return Err(AetherError::RuntimeError("File path must be a string".to_string()));
+                    }
                 }
                 
                 Opcode::FileWrite => {
                     let content = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _handle = self.stack.pop()
+                    let target = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // Write to file - simplified
-                    println!("[FILE WRITE] {:?}", content);
+                    
+                    if let (Value::String(path), Value::String(text)) = (target, content) {
+                        self.write_file(&path, &text)?;
+                        self.stack.push(Value::Boolean(true));
+                    } else {
+                        return Err(AetherError::RuntimeError("File write requires string path and content".to_string()));
+                    }
                 }
                 
                 Opcode::FileAppend => {
                     let content = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _handle = self.stack.pop()
+                    let target = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // Append to file - simplified
-                    println!("[FILE APPEND] {:?}", content);
+                    
+                    if let (Value::String(path), Value::String(text)) = (target, content) {
+                        self.append_file(&path, &text)?;
+                        self.stack.push(Value::Boolean(true));
+                    } else {
+                        return Err(AetherError::RuntimeError("File append requires string path and content".to_string()));
+                    }
                 }
                 
                 // File system operations (extended)
@@ -639,21 +653,26 @@ impl VM {
                 Opcode::PathResolve => {
                     let path = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // Path resolution - simplified
                     if let Value::String(p) = path {
-                        // For now, just return the path as-is
-                        self.stack.push(Value::String(p));
+                        // Resolve to absolute path
+                        let resolved = std::fs::canonicalize(&p)
+                            .map(|pb| pb.to_string_lossy().to_string())
+                            .unwrap_or(p);
+                        self.stack.push(Value::String(resolved));
                     } else {
                         self.stack.push(Value::Null);
                     }
                 }
                 
                 Opcode::DeleteFile => {
-                    let _target = self.stack.pop()
+                    let target = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // Delete file - not fully implemented
-                    println!("[FILE DELETE]");
-                    self.stack.push(Value::Boolean(true));
+                    if let Value::String(path) = target {
+                        self.delete_file(&path)?;
+                        self.stack.push(Value::Boolean(true));
+                    } else {
+                        return Err(AetherError::RuntimeError("File path must be a string".to_string()));
+                    }
                 }
                 
                 Opcode::SetPermission => {
@@ -668,72 +687,79 @@ impl VM {
                 
                 // HTTP operations
                 Opcode::HttpGet => {
-                    let _headers = self.stack.pop()
+                    let headers = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _url = self.stack.pop()
+                    let url = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // HTTP GET - not implemented in bytecode yet (runtime only)
-                    self.stack.push(Value::String("[HTTP GET RESPONSE]".to_string()));
+                    
+                    let result = self.execute_http_request("GET", &url, None, &headers)?;
+                    self.stack.push(result);
                 }
                 
                 Opcode::HttpPost => {
-                    let _headers = self.stack.pop()
+                    let headers = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _body = self.stack.pop()
+                    let body = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _url = self.stack.pop()
+                    let url = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // HTTP POST - not implemented in bytecode yet (runtime only)
-                    self.stack.push(Value::String("[HTTP POST RESPONSE]".to_string()));
+                    
+                    let result = self.execute_http_request("POST", &url, Some(&body), &headers)?;
+                    self.stack.push(result);
                 }
                 
                 Opcode::HttpPut => {
-                    let _headers = self.stack.pop()
+                    let headers = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _body = self.stack.pop()
+                    let body = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _url = self.stack.pop()
+                    let url = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // HTTP PUT - not implemented in bytecode yet (runtime only)
-                    self.stack.push(Value::String("[HTTP PUT RESPONSE]".to_string()));
+                    
+                    let result = self.execute_http_request("PUT", &url, Some(&body), &headers)?;
+                    self.stack.push(result);
                 }
                 
                 Opcode::HttpDelete => {
-                    let _headers = self.stack.pop()
+                    let headers = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _url = self.stack.pop()
+                    let url = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // HTTP DELETE - not implemented in bytecode yet (runtime only)
-                    self.stack.push(Value::String("[HTTP DELETE RESPONSE]".to_string()));
+                    
+                    let result = self.execute_http_request("DELETE", &url, None, &headers)?;
+                    self.stack.push(result);
                 }
                 
                 Opcode::HttpPatch => {
-                    let _headers = self.stack.pop()
+                    let headers = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _body = self.stack.pop()
+                    let body = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _url = self.stack.pop()
+                    let url = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // HTTP PATCH - not implemented in bytecode yet (runtime only)
-                    self.stack.push(Value::String("[HTTP PATCH RESPONSE]".to_string()));
+                    
+                    let result = self.execute_http_request("PATCH", &url, Some(&body), &headers)?;
+                    self.stack.push(result);
                 }
                 
                 Opcode::HttpHead => {
-                    let _headers = self.stack.pop()
+                    let headers = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _url = self.stack.pop()
+                    let url = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // HTTP HEAD - not implemented in bytecode yet (runtime only)
-                    self.stack.push(Value::String("[HTTP HEAD RESPONSE]".to_string()));
+                    
+                    let result = self.execute_http_request("HEAD", &url, None, &headers)?;
+                    self.stack.push(result);
                 }
                 
                 Opcode::HttpOptions => {
-                    let _headers = self.stack.pop()
+                    let headers = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _url = self.stack.pop()
+                    let url = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // HTTP OPTIONS - not implemented in bytecode yet (runtime only)
-                    self.stack.push(Value::String("[HTTP OPTIONS RESPONSE]".to_string()));
+                    
+                    let result = self.execute_http_request("OPTIONS", &url, None, &headers)?;
+                    self.stack.push(result);
                 }
                 
                 // Process & Environment operations
@@ -743,7 +769,12 @@ impl VM {
                     if let Value::String(var_name) = name {
                         match std::env::var(&var_name) {
                             Ok(value) => self.stack.push(Value::String(value)),
-                            Err(_) => self.stack.push(Value::Null),
+                            Err(std::env::VarError::NotPresent) => self.stack.push(Value::Null),
+                            Err(std::env::VarError::NotUnicode(_)) => {
+                                return Err(AetherError::RuntimeError(
+                                    format!("Environment variable '{}' contains invalid Unicode", var_name)
+                                ));
+                            }
                         }
                     } else {
                         self.stack.push(Value::Null);
@@ -916,12 +947,25 @@ impl VM {
                 
                 // Data operations
                 Opcode::RegexMatch => {
-                    let _target = self.stack.pop()
+                    let target = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    let _pattern = self.stack.pop()
+                    let pattern = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
-                    // Regex match - not fully implemented
-                    self.stack.push(Value::Boolean(false));
+                    
+                    if let (Value::String(pat), Value::String(text)) = (pattern, target) {
+                        use regex::Regex;
+                        match Regex::new(&pat) {
+                            Ok(re) => {
+                                let matches = re.is_match(&text);
+                                self.stack.push(Value::Boolean(matches));
+                            }
+                            Err(_) => {
+                                return Err(AetherError::RuntimeError(format!("Invalid regex pattern: {}", pat)));
+                            }
+                        }
+                    } else {
+                        self.stack.push(Value::Boolean(false));
+                    }
                 }
                 
                 Opcode::Auth => {
@@ -998,6 +1042,108 @@ impl VM {
                 value
             ))),
         }
+    }
+    
+    /// Execute HTTP request
+    fn execute_http_request(&self, method: &str, url: &Value, body: Option<&Value>, headers: &Value) -> Result<Value> {
+        // Extract URL string
+        let url_str = match url {
+            Value::String(s) => s.as_str(),
+            _ => return Err(AetherError::RuntimeError("HTTP URL must be a string".to_string())),
+        };
+        
+        // Create tokio runtime for async operations
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| AetherError::RuntimeError(format!("Failed to create async runtime: {}", e)))?;
+        
+        rt.block_on(async {
+            // Build HTTP client with rustls
+            let client = reqwest::Client::builder()
+                .use_rustls_tls()
+                .build()
+                .map_err(|e| AetherError::RuntimeError(format!("Failed to create HTTP client: {}", e)))?;
+            
+            // Create request builder
+            let request_builder = match method {
+                "GET" => client.get(url_str),
+                "POST" => client.post(url_str),
+                "PUT" => client.put(url_str),
+                "DELETE" => client.delete(url_str),
+                "PATCH" => client.patch(url_str),
+                "HEAD" => client.head(url_str),
+                "OPTIONS" => client.request(reqwest::Method::OPTIONS, url_str),
+                _ => return Err(AetherError::RuntimeError(format!("Unsupported HTTP method: {}", method))),
+            };
+            
+            // Add body if provided
+            let mut request_builder = if let Some(body_val) = body {
+                match body_val {
+                    Value::String(s) if !matches!(body_val, Value::Null) => request_builder.body(s.clone()),
+                    Value::Null => request_builder,
+                    _ => request_builder.body(format!("{:?}", body_val)),
+                }
+            } else {
+                request_builder
+            };
+            
+            // Add headers if provided
+            if !matches!(headers, Value::Null) {
+                if let Value::Object(header_map) = headers {
+                    for (key, value) in header_map.iter() {
+                        let header_value = match value {
+                            Value::String(s) => s.clone(),
+                            Value::Number(n) => n.to_string(),
+                            Value::Boolean(b) => b.to_string(),
+                            _ => format!("{:?}", value),
+                        };
+                        request_builder = request_builder.header(key.as_str(), header_value);
+                    }
+                }
+            }
+            
+            // Execute request
+            let response = request_builder.send().await
+                .map_err(|e| AetherError::RuntimeError(format!("HTTP request failed: {}", e)))?;
+            
+            // Get response text
+            let text = response.text().await
+                .map_err(|e| AetherError::RuntimeError(format!("Failed to read response: {}", e)))?;
+            
+            Ok(Value::String(text))
+        })
+    }
+    
+    /// Read file content
+    fn read_file(&self, path: &str) -> Result<String> {
+        std::fs::read_to_string(path)
+            .map_err(|e| AetherError::RuntimeError(format!("Failed to read file '{}': {}", path, e)))
+    }
+    
+    /// Write file content
+    fn write_file(&self, path: &str, content: &str) -> Result<()> {
+        std::fs::write(path, content)
+            .map_err(|e| AetherError::RuntimeError(format!("Failed to write file '{}': {}", path, e)))
+    }
+    
+    /// Append to file
+    fn append_file(&self, path: &str, content: &str) -> Result<()> {
+        use std::fs::OpenOptions;
+        use std::io::Write;
+        
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .map_err(|e| AetherError::RuntimeError(format!("Failed to open file '{}': {}", path, e)))?;
+        
+        file.write_all(content.as_bytes())
+            .map_err(|e| AetherError::RuntimeError(format!("Failed to append to file '{}': {}", path, e)))
+    }
+    
+    /// Delete file
+    fn delete_file(&self, path: &str) -> Result<()> {
+        std::fs::remove_file(path)
+            .map_err(|e| AetherError::RuntimeError(format!("Failed to delete file '{}': {}", path, e)))
     }
 }
 
