@@ -49,8 +49,10 @@ test_example() {
     echo -e "${GREEN}✓ Compilation successful${NC}"
     
     # Check bytecode file size
-    local size=$(stat -f%z "$aeb_file" 2>/dev/null || stat -c%s "$aeb_file" 2>/dev/null)
-    echo "Bytecode size: ${size} bytes"
+    if [ -f "$aeb_file" ]; then
+        local size=$(wc -c < "$aeb_file")
+        echo "Bytecode size: ${size} bytes"
+    fi
     
     # Execute
     echo "Executing bytecode..."

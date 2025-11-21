@@ -26,6 +26,12 @@ pub struct VM {
     max_iterations: usize,
 }
 
+/// Default maximum iteration limit
+const DEFAULT_MAX_ITERATIONS: usize = 10000;
+
+/// Epsilon for approximate equality comparisons
+const APPROX_EPSILON: f64 = 0.000001;
+
 impl VM {
     /// Create a new VM with a bytecode program
     pub fn new(program: BytecodeProgram) -> Self {
@@ -36,7 +42,7 @@ impl VM {
             variables: HashMap::new(),
             immutable_vars: HashSet::new(),
             call_stack: Vec::new(),
-            max_iterations: 10000,
+            max_iterations: DEFAULT_MAX_ITERATIONS,
         }
     }
     
@@ -207,8 +213,7 @@ impl VM {
                 Opcode::Approx => {
                     let right = self.pop_number()?;
                     let left = self.pop_number()?;
-                    let epsilon = 0.000001;
-                    self.stack.push(Value::Boolean((left - right).abs() < epsilon));
+                    self.stack.push(Value::Boolean((left - right).abs() < APPROX_EPSILON));
                 }
                 
                 Opcode::And => {
@@ -459,24 +464,27 @@ impl VM {
                 }
                 
                 Opcode::Regex => {
-                    // Basic regex match
+                    // Stack: [pattern, target] (target on top)
                     let target = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
                     let pattern = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
                     
-                    if let (Value::String(pat), Value::String(tgt)) = (pattern, target) {
-                        match regex::Regex::new(&pat) {
-                            Ok(re) => {
-                                let is_match = re.is_match(&tgt);
-                                self.stack.push(Value::Boolean(is_match));
-                            }
-                            Err(_) => {
-                                return Err(AetherError::RuntimeError("Invalid regex pattern".to_string()));
+                    match (pattern, target) {
+                        (Value::String(pat), Value::String(tgt)) => {
+                            match regex::Regex::new(&pat) {
+                                Ok(re) => {
+                                    let is_match = re.is_match(&tgt);
+                                    self.stack.push(Value::Boolean(is_match));
+                                }
+                                Err(_) => {
+                                    return Err(AetherError::RuntimeError("Invalid regex pattern".to_string()));
+                                }
                             }
                         }
-                    } else {
-                        return Err(AetherError::RuntimeError("Regex requires string inputs".to_string()));
+                        _ => {
+                            return Err(AetherError::RuntimeError("Regex requires string inputs".to_string()));
+                        }
                     }
                 }
                 

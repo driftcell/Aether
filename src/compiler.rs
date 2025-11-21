@@ -233,13 +233,12 @@ impl Compiler {
             }
             
             AstNode::Retry { max_attempts, body } => {
-                if let Some(attempts) = max_attempts {
-                    self.program.emit_opcode(Opcode::PushNumber);
-                    self.program.emit_f64(*attempts as f64);
+                let attempts = if let Some(a) = max_attempts {
+                    *a as f64
                 } else {
-                    self.program.emit_opcode(Opcode::PushNumber);
-                    self.program.emit_f64(3.0); // default 3 attempts
-                }
+                    3.0 // default
+                };
+                self.emit_number(attempts);
                 self.program.emit_opcode(Opcode::Retry);
                 self.compile_node(body)?;
             }
@@ -382,9 +381,11 @@ impl Compiler {
             }
             
             AstNode::Mock { target } => {
+                // Compile the target node to get its representation
                 self.compile_node(target)?;
+                // For now, emit with a default index; full implementation would need target resolution
                 self.program.emit_opcode(Opcode::Mock);
-                self.program.emit_u32(0); // placeholder index
+                self.program.emit_u32(0);
             }
             
             AstNode::Benchmark { body } => {
@@ -446,11 +447,16 @@ impl Compiler {
                 self.program.emit_u32(idx);
             }
             LiteralValue::Number(n) => {
-                self.program.emit_opcode(Opcode::PushNumber);
-                self.program.emit_f64(*n);
+                self.emit_number(*n);
             }
         }
         Ok(())
+    }
+    
+    /// Helper to emit a number
+    fn emit_number(&mut self, value: f64) {
+        self.program.emit_opcode(Opcode::PushNumber);
+        self.program.emit_f64(value);
     }
 }
 
