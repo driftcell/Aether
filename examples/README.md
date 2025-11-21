@@ -36,6 +36,18 @@ Outputs current date and time. Uses the DateTime symbol (📅).
 ```
 Generates and outputs a random number. Uses the Random symbol (🎲).
 
+### http_requests.ae (Requires Network)
+Demonstrates all HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS).
+**Note**: Requires internet connectivity to httpbin.org
+
+### api_demo.ae (Requires Network)
+Practical API usage example with JSONPlaceholder API.
+**Note**: Requires internet connectivity to jsonplaceholder.typicode.com
+
+### http_simple.ae (Requires Network)
+Simple HTTP GET request demonstration.
+**Note**: Requires internet connectivity
+
 ## Compiling and Running Examples
 
 ### Option 1: Direct Interpretation (Run)
@@ -105,6 +117,13 @@ Quick reference for symbols used in examples:
 | J | JSON | Parse JSON |
 | ⁇ | Guard | Null check |
 | 🛑 | Halt | Error halt |
+| 🌐📥 | HTTP GET | HTTP GET request |
+| 🌐📤 | HTTP POST | HTTP POST request |
+| 🌐🔄 | HTTP PUT | HTTP PUT request |
+| 🌐🗑️ | HTTP DELETE | HTTP DELETE request |
+| 🌐🔧 | HTTP PATCH | HTTP PATCH request |
+| 🌐👁️ | HTTP HEAD | HTTP HEAD request |
+| 🌐⚙️ | HTTP OPTIONS | HTTP OPTIONS request |
 
 For complete symbol reference: `aether symbols`
 

@@ -1,0 +1,7 @@
+// Simple HTTP demonstration (will attempt network requests)
+// Note: These examples require internet connectivity
+
+// Simple GET request
+📤 "Making HTTP GET request..."
+🌐📥 "https://httpbin.org/status/200" ▷ response
+📤 "GET complete"

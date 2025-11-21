@@ -1,5 +1,6 @@
 // HTTP Request Examples in Aether
 // Demonstrates all HTTP methods: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+// NOTE: These examples require internet connectivity to run successfully
 
 // Simple GET request
 🌐📥 "https://httpbin.org/get" ▷ response ⨠ 📤 response

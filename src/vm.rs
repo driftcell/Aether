@@ -590,13 +590,6 @@ impl VM {
                 Opcode::End => {
                     break;
                 }
-                
-                _ => {
-                    return Err(AetherError::RuntimeError(format!(
-                        "Unimplemented opcode: {:?}",
-                        opcode
-                    )));
-                }
             }
         }
         

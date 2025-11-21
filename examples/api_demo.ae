@@ -1,5 +1,6 @@
 // Practical HTTP API Usage Example
 // Fetching user data from JSONPlaceholder API
+// NOTE: These examples require internet connectivity to run successfully
 
 // GET user data
 🌐📥 "https://jsonplaceholder.typicode.com/users/1" ▷ user ⨠ 📤 user
