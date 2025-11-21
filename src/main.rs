@@ -1,6 +1,6 @@
 //! Aether CLI - Command line interface for the Aether programming language
 
-use aether::{Lexer, Parser, Runtime, Compiler, VM, BytecodeProgram, LANGUAGE_NAME, VERSION};
+use aether::{Lexer, Parser, Runtime, Compiler, VM, BytecodeProgram, Explainer, LANGUAGE_NAME, VERSION};
 use std::env;
 use std::fs;
 use std::io::{BufReader, BufWriter};
@@ -56,6 +56,16 @@ fn main() {
             let filename = &args[2];
             exec_bytecode(filename);
         }
+        "explain" => {
+            if args.len() < 3 {
+                eprintln!("Error: No input file(s) specified");
+                print_usage();
+                process::exit(1);
+            }
+            // Collect all file patterns from arguments
+            let patterns: Vec<String> = args[2..].to_vec();
+            explain_files(&patterns);
+        }
         "symbols" => {
             print_symbols();
         }
@@ -74,6 +84,7 @@ fn print_usage() {
     println!("  run <file>              Run an Aether source file (.ae)");
     println!("  compile <file> [out]    Compile .ae source to .aeb bytecode");
     println!("  exec <file>             Execute .aeb bytecode file");
+    println!("  explain <file(s)>       Explain .ae file(s) in human-readable format");
     println!("  symbols                 Display symbol reference");
     println!("  version                 Display version information");
     println!("  help                    Display this help message");
@@ -91,6 +102,8 @@ fn print_help() {
     println!("  aether run program.ae              # Run an Aether program");
     println!("  aether compile program.ae          # Compile to program.aeb");
     println!("  aether exec program.aeb            # Execute bytecode");
+    println!("  aether explain program.ae          # Explain program in readable form");
+    println!("  aether explain examples/*.ae       # Explain multiple programs");
     println!("  aether symbols                     # View symbol reference");
 }
 
@@ -423,4 +436,111 @@ fn exec_bytecode(filename: &str) {
             process::exit(1);
         }
     }
+}
+
+fn explain_files(patterns: &[String]) {
+    use std::path::Path;
+    
+    let mut files_to_explain = Vec::new();
+    
+    // Process each pattern
+    for pattern in patterns {
+        // Check if it's a glob pattern
+        if pattern.contains('*') || pattern.contains('?') {
+            // Use glob to expand pattern
+            match glob::glob(pattern) {
+                Ok(paths) => {
+                    for entry in paths {
+                        match entry {
+                            Ok(path) => {
+                                if path.extension().and_then(|s| s.to_str()) == Some("ae") {
+                                    files_to_explain.push(path.to_string_lossy().to_string());
+                                }
+                            }
+                            Err(e) => eprintln!("Warning: Error reading path: {}", e),
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error: Invalid glob pattern '{}': {}", pattern, e);
+                }
+            }
+        } else {
+            // It's a regular file path
+            let path = Path::new(pattern);
+            if path.exists() {
+                if path.extension().and_then(|s| s.to_str()) == Some("ae") {
+                    files_to_explain.push(pattern.clone());
+                } else {
+                    eprintln!("Warning: '{}' is not an .ae file, skipping", pattern);
+                }
+            } else {
+                eprintln!("Error: File '{}' does not exist", pattern);
+            }
+        }
+    }
+    
+    if files_to_explain.is_empty() {
+        eprintln!("Error: No valid .ae files found");
+        process::exit(1);
+    }
+    
+    // Explain each file
+    for (i, filename) in files_to_explain.iter().enumerate() {
+        if i > 0 {
+            println!("\n{}", "=".repeat(80));
+            println!();
+        }
+        explain_file(filename);
+    }
+}
+
+fn explain_file(filename: &str) {
+    let source = match fs::read_to_string(filename) {
+        Ok(content) => content,
+        Err(err) => {
+            eprintln!("Error reading file '{}': {}", filename, err);
+            return;
+        }
+    };
+    
+    println!("📄 File: {}", filename);
+    println!("{}", "-".repeat(80));
+    
+    // Show original code
+    println!("\n🔣 Aether Code:");
+    println!("{}", "-".repeat(80));
+    for line in source.lines() {
+        if !line.trim().is_empty() && !line.trim().starts_with("//") {
+            println!("{}", line);
+        }
+    }
+    
+    // Lexer
+    let mut lexer = Lexer::new(source.clone());
+    let tokens = match lexer.tokenize() {
+        Ok(t) => t,
+        Err(err) => {
+            eprintln!("\nLexer error: {}", err);
+            return;
+        }
+    };
+    
+    // Parser
+    let mut parser = Parser::new(tokens);
+    let ast = match parser.parse() {
+        Ok(a) => a,
+        Err(err) => {
+            eprintln!("\nParser error: {}", err);
+            return;
+        }
+    };
+    
+    // Explain
+    let mut explainer = Explainer::new();
+    let explanation = explainer.explain(&ast);
+    
+    println!("\n📖 Human-Readable Explanation:");
+    println!("{}", "-".repeat(80));
+    println!("{}", explanation);
 }
