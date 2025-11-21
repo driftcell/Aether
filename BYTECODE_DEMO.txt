@@ -1,0 +1,63 @@
+====================================================================
+           AETHER BYTECODE COMPILER & VM DEMONSTRATION
+====================================================================
+
+1. COMPILE SOURCE TO BYTECODE
+--------------------------------------------------------------------
+Compiling examples/hello.ae to examples/hello.aeb...
+------------------------------------------------------------
+✓ Lexer: 3 tokens generated
+✓ Parser: 1 AST nodes generated
+✓ Compiler: 7 bytes of bytecode generated
+  - Constants: 1
+------------------------------------------------------------
+✓ Compilation successful!
+Output: examples/hello.aeb
+
+2. INSPECT BYTECODE FILE
+--------------------------------------------------------------------
+Hex dump of hello.aeb:
+00000000  41 45 42 00 01 00 00 00  01 00 00 00 0e 48 65 6c  |AEB..........Hel|
+00000010  6c 6f 2c 20 41 65 74 68  65 72 21 00 00 00 07 03  |lo, Aether!.....|
+00000020  00 00 00 00 51 ff                                 |....Q.|
+00000026
+
+3. EXECUTE BYTECODE WITH VM
+--------------------------------------------------------------------
+Executing bytecode: examples/hello.aeb
+------------------------------------------------------------
+✓ Bytecode loaded:
+  - Code size: 7 bytes
+  - Constants: 1
+------------------------------------------------------------
+Output: String("Hello, Aether!")
+------------------------------------------------------------
+✓ Execution completed successfully
+Result: String("Hello, Aether!")
+
+4. COMPARISON WITH DIRECT INTERPRETATION
+--------------------------------------------------------------------
+Running Aether program: examples/hello.ae
+------------------------------------------------------------
+Tokens: 3 token(s) generated
+AST: 1 node(s) parsed
+Output: String("Hello, Aether!")
+------------------------------------------------------------
+Execution completed successfully
+Result: String("Hello, Aether!")
+
+====================================================================
+                    ALL EXAMPLES SUMMARY
+====================================================================
+examples/arithmetic.aeb: 24
+examples/complex_math.aeb: 24
+examples/datetime.aeb: 16
+examples/hash.aeb: 30
+examples/hello.aeb: 38
+examples/log.aeb: 31
+examples/number.aeb: 24
+examples/power.aeb: 24
+examples/random.aeb: 16
+examples/sequence.aeb: 60
+examples/sqrt.aeb: 24
+examples/variable.aeb: 28

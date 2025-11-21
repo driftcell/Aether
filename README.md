@@ -231,12 +231,42 @@ aether version
 # View symbol reference
 aether symbols
 
-# Run an Aether program
+# Run an Aether program directly
 aether run examples/hello.ae
+
+# Compile to bytecode
+aether compile examples/hello.ae
+
+# Execute bytecode
+aether exec examples/hello.aeb
 
 # Display help
 aether help
 ```
+
+### Bytecode Compilation Workflow
+
+Aether now supports compilation to bytecode (.aeb files) for improved performance and distribution:
+
+```bash
+# Write your Aether code
+echo '📤 "Hello, World!"' > program.ae
+
+# Compile to bytecode
+aether compile program.ae
+
+# Execute the bytecode
+aether exec program.aeb
+```
+
+**Benefits of Bytecode:**
+- ⚡ Faster execution (no parsing overhead)
+- 📦 Compact binary format with constant pooling
+- 🔒 Obfuscated source code
+- 🚀 Distribute compiled programs
+- ✅ Pre-validated at compile time
+
+See [docs/BYTECODE.md](docs/BYTECODE.md) for detailed bytecode format specification.
 
 ## 📚 Examples
 
@@ -331,6 +361,9 @@ cargo test -- --nocapture
 
 # Run specific test
 cargo test test_lexer_basic_symbols
+
+# Test all examples (compile + execute)
+./test_examples.sh
 ```
 
 ## 🛣️ Roadmap
@@ -344,11 +377,13 @@ cargo test test_lexer_basic_symbols
 - [x] **v1.1: Extended symbol system** (Control Flow, Async, Data Manipulation, System)
 - [x] **v1.2: Testing, Security & Math symbols** (Testing/Debugging, Security/Crypto, Math/Science)
 - [x] **v1.3: System Programming & I/O** (File System, Streams & Buffers, Networking, Process & OS)
+- [x] **v1.4: Bytecode Compiler & VM** (Compile .ae → .aeb, Stack-based VM execution)
 - [ ] Full runtime with I/O
 - [ ] Database connectors
 - [ ] HTTP client/server
 - [ ] Type system
-- [ ] Compiler optimizations
+- [ ] Compiler optimizations (constant folding, dead code elimination)
+- [ ] JIT compilation
 - [ ] WASM target
 - [ ] VSCode extension
 - [ ] AI tokenizer integration

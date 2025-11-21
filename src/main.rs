@@ -1,8 +1,9 @@
 //! Aether CLI - Command line interface for the Aether programming language
 
-use aether::{Lexer, Parser, Runtime, LANGUAGE_NAME, VERSION};
+use aether::{Lexer, Parser, Runtime, Compiler, VM, BytecodeProgram, LANGUAGE_NAME, VERSION};
 use std::env;
 use std::fs;
+use std::io::{BufReader, BufWriter};
 use std::process;
 
 fn main() {
@@ -31,6 +32,30 @@ fn main() {
             let filename = &args[2];
             run_file(filename);
         }
+        "compile" => {
+            if args.len() < 3 {
+                eprintln!("Error: No input file specified");
+                print_usage();
+                process::exit(1);
+            }
+            let input_file = &args[2];
+            let output_file = if args.len() >= 4 {
+                args[3].clone()
+            } else {
+                // Replace .ae extension with .aeb
+                input_file.replace(".ae", ".aeb")
+            };
+            compile_file(input_file, &output_file);
+        }
+        "exec" => {
+            if args.len() < 3 {
+                eprintln!("Error: No bytecode file specified");
+                print_usage();
+                process::exit(1);
+            }
+            let filename = &args[2];
+            exec_bytecode(filename);
+        }
         "symbols" => {
             print_symbols();
         }
@@ -46,10 +71,12 @@ fn print_usage() {
     println!("Usage: aether <command> [options]");
     println!();
     println!("Commands:");
-    println!("  run <file>      Run an Aether source file");
-    println!("  symbols         Display symbol reference");
-    println!("  version         Display version information");
-    println!("  help            Display this help message");
+    println!("  run <file>              Run an Aether source file (.ae)");
+    println!("  compile <file> [out]    Compile .ae source to .aeb bytecode");
+    println!("  exec <file>             Execute .aeb bytecode file");
+    println!("  symbols                 Display symbol reference");
+    println!("  version                 Display version information");
+    println!("  help                    Display this help message");
 }
 
 fn print_help() {
@@ -61,8 +88,10 @@ fn print_help() {
     print_usage();
     println!();
     println!("Examples:");
-    println!("  aether run program.ae          # Run an Aether program");
-    println!("  aether symbols                 # View symbol reference");
+    println!("  aether run program.ae              # Run an Aether program");
+    println!("  aether compile program.ae          # Compile to program.aeb");
+    println!("  aether exec program.aeb            # Execute bytecode");
+    println!("  aether symbols                     # View symbol reference");
 }
 
 fn print_symbols() {
@@ -278,6 +307,119 @@ fn run_file(filename: &str) {
         Err(err) => {
             eprintln!("{}", "-".repeat(60));
             eprintln!("Runtime error: {}", err);
+            process::exit(1);
+        }
+    }
+}
+
+fn compile_file(input_file: &str, output_file: &str) {
+    println!("Compiling {} to {}...", input_file, output_file);
+    println!("{}", "-".repeat(60));
+
+    // Read source file
+    let source = match fs::read_to_string(input_file) {
+        Ok(content) => content,
+        Err(err) => {
+            eprintln!("Error reading file '{}': {}", input_file, err);
+            process::exit(1);
+        }
+    };
+
+    // Lexer
+    let mut lexer = Lexer::new(source);
+    let tokens = match lexer.tokenize() {
+        Ok(t) => t,
+        Err(err) => {
+            eprintln!("Lexer error: {}", err);
+            process::exit(1);
+        }
+    };
+    println!("✓ Lexer: {} tokens generated", tokens.len());
+
+    // Parser
+    let mut parser = Parser::new(tokens);
+    let ast = match parser.parse() {
+        Ok(a) => a,
+        Err(err) => {
+            eprintln!("Parser error: {}", err);
+            process::exit(1);
+        }
+    };
+    println!("✓ Parser: {} AST nodes generated", ast.len());
+
+    // Compiler
+    let mut compiler = Compiler::new();
+    let bytecode = match compiler.compile(ast) {
+        Ok(b) => b,
+        Err(err) => {
+            eprintln!("Compiler error: {}", err);
+            process::exit(1);
+        }
+    };
+    println!("✓ Compiler: {} bytes of bytecode generated", bytecode.code.len());
+    println!("  - Constants: {}", bytecode.constants.len());
+
+    // Write bytecode to file
+    let file = match fs::File::create(output_file) {
+        Ok(f) => f,
+        Err(err) => {
+            eprintln!("Error creating output file '{}': {}", output_file, err);
+            process::exit(1);
+        }
+    };
+
+    let mut writer = BufWriter::new(file);
+    match bytecode.serialize(&mut writer) {
+        Ok(_) => {
+            println!("{}", "-".repeat(60));
+            println!("✓ Compilation successful!");
+            println!("Output: {}", output_file);
+        }
+        Err(err) => {
+            eprintln!("Error writing bytecode: {}", err);
+            process::exit(1);
+        }
+    }
+}
+
+fn exec_bytecode(filename: &str) {
+    println!("Executing bytecode: {}", filename);
+    println!("{}", "-".repeat(60));
+
+    // Read bytecode file
+    let file = match fs::File::open(filename) {
+        Ok(f) => f,
+        Err(err) => {
+            eprintln!("Error opening file '{}': {}", filename, err);
+            process::exit(1);
+        }
+    };
+
+    let mut reader = BufReader::new(file);
+    let bytecode = match BytecodeProgram::deserialize(&mut reader) {
+        Ok(b) => b,
+        Err(err) => {
+            eprintln!("Error reading bytecode: {}", err);
+            process::exit(1);
+        }
+    };
+
+    println!("✓ Bytecode loaded:");
+    println!("  - Code size: {} bytes", bytecode.code.len());
+    println!("  - Constants: {}", bytecode.constants.len());
+    println!("{}", "-".repeat(60));
+
+    // Execute with VM
+    let mut vm = VM::new(bytecode);
+    match vm.execute() {
+        Ok(result) => {
+            println!("{}", "-".repeat(60));
+            println!("✓ Execution completed successfully");
+            println!("Result: {:?}", result);
+        }
+        Err(err) => {
+            eprintln!("{}", "-".repeat(60));
+            eprintln!("VM error: {}", err);
             process::exit(1);
         }
     }
