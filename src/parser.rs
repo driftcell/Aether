@@ -465,6 +465,73 @@ pub enum AstNode {
         target: Box<AstNode>,
     },
     
+    // AI & Tensor Core (v1.4)
+    /// AI Inference/Model Call
+    Brain {
+        prompt: Box<AstNode>,
+        model: Option<Box<AstNode>>,
+    },
+    
+    /// Embedding/Vectorize
+    Dna {
+        text: Box<AstNode>,
+    },
+    
+    /// Tensor/Matrix
+    Tensor {
+        dimensions: Box<AstNode>,
+    },
+    
+    /// Vector Search/KNN
+    Track {
+        query_vector: Box<AstNode>,
+        collection: Box<AstNode>,
+        top_k: Option<Box<AstNode>>,
+    },
+    
+    // Cloud & Distributed (v1.5)
+    /// Message Queue/Pub-Sub
+    Mailbox {
+        data: Box<AstNode>,
+        topic: Box<AstNode>,
+    },
+    
+    /// Serverless/Deploy
+    CloudFunction {
+        name: String,
+        body: Box<AstNode>,
+    },
+    
+    /// Cache/Fast Access
+    RacingCarCache {
+        key: Box<AstNode>,
+        value: Box<AstNode>,
+        ttl: Option<Box<AstNode>>,
+    },
+    
+    /// Health Check/Heartbeat
+    Stethoscope {
+        body: Box<AstNode>,
+    },
+    
+    // Time & Scheduler (v1.6)
+    /// Sleep/Delay
+    Sleep {
+        duration: Box<AstNode>,
+    },
+    
+    /// Schedule/Cron
+    AlarmClock {
+        schedule: Box<AstNode>,
+        body: Box<AstNode>,
+    },
+    
+    /// Timeout/Deadline
+    Hourglass {
+        duration: Box<AstNode>,
+        body: Box<AstNode>,
+    },
+    
     /// Property access (e.g., obj.field)
     PropertyAccess {
         object: Box<AstNode>,
@@ -1582,6 +1649,180 @@ impl Parser {
                     })
                 }
                 
+                // AI & Tensor Core (v1.4)
+                TokenType::Symbol(Symbol::Brain) => {
+                    self.advance();
+                    // Syntax: prompt ⇢ 🧠model or just 🧠 prompt
+                    let prompt = self.parse_primary()?;
+                    // Check if model is provided (optional)
+                    let model = if !self.is_at_end() && !self.check_symbol(&Symbol::Eos) && !self.check_symbol(&Symbol::PipeInto) && !self.check_symbol(&Symbol::Sequence) {
+                        // Try to parse model as string literal
+                        if let Ok(model_node) = self.try_parse_optional_arg() {
+                            Some(Box::new(model_node))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
+                    Ok(AstNode::Brain {
+                        prompt: Box::new(prompt),
+                        model,
+                    })
+                }
+                TokenType::Symbol(Symbol::Dna) => {
+                    self.advance();
+                    // Syntax: text ⇢ 🧬
+                    // Use piped value if available
+                    let text = if self.is_in_pipe_context() {
+                        Box::new(AstNode::Variable(PIPE_VARIABLE.to_string()))
+                    } else {
+                        Box::new(self.parse_primary()?)
+                    };
+                    Ok(AstNode::Dna { text })
+                }
+                TokenType::Symbol(Symbol::Tensor) => {
+                    self.advance();
+                    // Syntax: 📐[dimensions]
+                    let dimensions = self.parse_primary()?;
+                    Ok(AstNode::Tensor {
+                        dimensions: Box::new(dimensions),
+                    })
+                }
+                TokenType::Symbol(Symbol::Track) => {
+                    self.advance();
+                    // Syntax: queryVector ⇢ 🛤️(collection, top_k)
+                    // Parse arguments in parentheses
+                    let collection = self.parse_primary()?;
+                    let top_k = if self.match_symbol(&Symbol::Separator) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
+                    let query_vector = Box::new(AstNode::Variable(PIPE_VARIABLE.to_string()));
+                    Ok(AstNode::Track {
+                        query_vector,
+                        collection: Box::new(collection),
+                        top_k,
+                    })
+                }
+                
+                // Cloud & Distributed (v1.5)
+                TokenType::Symbol(Symbol::Mailbox) => {
+                    self.advance();
+                    // Syntax: data ⇢ 📬"topic"
+                    let topic = self.parse_primary()?;
+                    let data = Box::new(AstNode::Variable(PIPE_VARIABLE.to_string()));
+                    Ok(AstNode::Mailbox {
+                        data,
+                        topic: Box::new(topic),
+                    })
+                }
+                TokenType::Symbol(Symbol::Cloud) => {
+                    self.advance();
+                    // Syntax: ☁️ ƒname: body
+                    // Expect function name after colon
+                    if let Some(Token { token_type: TokenType::Symbol(Symbol::Function), .. }) = self.peek() {
+                        self.advance();
+                        // Parse function name
+                        let name = if let Some(Token { token_type: TokenType::Symbol(Symbol::Identifier(id)), .. }) = self.peek() {
+                            let n = id.clone();
+                            self.advance();
+                            n
+                        } else {
+                            return Err(AetherError::ParserError("Expected function name after ☁️ ƒ".to_string()));
+                        };
+                        
+                        // Expect colon
+                        if !matches!(self.peek().map(|t| &t.token_type), Some(TokenType::Colon)) {
+                            return Err(AetherError::ParserError("Expected : after function name".to_string()));
+                        }
+                        self.advance();
+                        
+                        let body = self.parse_statement()?;
+                        Ok(AstNode::CloudFunction {
+                            name,
+                            body: Box::new(body),
+                        })
+                    } else {
+                        Err(AetherError::ParserError("Expected function definition after ☁️".to_string()))
+                    }
+                }
+                TokenType::Symbol(Symbol::RacingCar) => {
+                    self.advance();
+                    // Syntax: key ⇢ 🏎️(ttl) or userData ⇢ 🏎️(1h)
+                    // Parse optional TTL in parentheses
+                    let ttl = if self.check(&TokenType::LeftParen) {
+                        self.advance(); // consume (
+                        let ttl_node = self.parse_primary()?;
+                        if !self.check(&TokenType::RightParen) {
+                            return Err(AetherError::ParserError("Expected ) after TTL".to_string()));
+                        }
+                        self.advance(); // consume )
+                        Some(Box::new(ttl_node))
+                    } else {
+                        None
+                    };
+                    
+                    let key = Box::new(AstNode::Variable(PIPE_VARIABLE.to_string()));
+                    let value = key.clone(); // In cache, key and value are the same for now
+                    Ok(AstNode::RacingCarCache {
+                        key,
+                        value,
+                        ttl,
+                    })
+                }
+                TokenType::Symbol(Symbol::Stethoscope) => {
+                    self.advance();
+                    // Syntax: 🩺: body
+                    if !matches!(self.peek().map(|t| &t.token_type), Some(TokenType::Colon)) {
+                        return Err(AetherError::ParserError("Expected : after 🩺".to_string()));
+                    }
+                    self.advance();
+                    let body = self.parse_statement()?;
+                    Ok(AstNode::Stethoscope {
+                        body: Box::new(body),
+                    })
+                }
+                
+                // Time & Scheduler (v1.6)
+                TokenType::Symbol(Symbol::Sleep) => {
+                    self.advance();
+                    // Syntax: 💤duration (e.g., 💤5s)
+                    let duration = self.parse_primary()?;
+                    Ok(AstNode::Sleep {
+                        duration: Box::new(duration),
+                    })
+                }
+                TokenType::Symbol(Symbol::AlarmClock) => {
+                    self.advance();
+                    // Syntax: ⏰"cron_expr": body
+                    let schedule = self.parse_primary()?;
+                    if !matches!(self.peek().map(|t| &t.token_type), Some(TokenType::Colon)) {
+                        return Err(AetherError::ParserError("Expected : after schedule expression".to_string()));
+                    }
+                    self.advance();
+                    let body = self.parse_statement()?;
+                    Ok(AstNode::AlarmClock {
+                        schedule: Box::new(schedule),
+                        body: Box::new(body),
+                    })
+                }
+                TokenType::Symbol(Symbol::Hourglass) => {
+                    self.advance();
+                    // Syntax: ⌛duration: body
+                    let duration = self.parse_primary()?;
+                    if !matches!(self.peek().map(|t| &t.token_type), Some(TokenType::Colon)) {
+                        return Err(AetherError::ParserError("Expected : after timeout duration".to_string()));
+                    }
+                    self.advance();
+                    let body = self.parse_statement()?;
+                    Ok(AstNode::Hourglass {
+                        duration: Box::new(duration),
+                        body: Box::new(body),
+                    })
+                }
+                
                 _ => Err(AetherError::ParserError(format!(
                     "Unexpected token: {:?}",
                     token
@@ -1710,6 +1951,31 @@ impl Parser {
         }
         else {
             Ok(None)
+        }
+    }
+    
+    /// Check if current token matches a token type
+    fn check(&self, token_type: &TokenType) -> bool {
+        if let Some(token) = self.peek() {
+            std::mem::discriminant(&token.token_type) == std::mem::discriminant(token_type)
+        } else {
+            false
+        }
+    }
+    
+    /// Try to parse an optional argument (like model name)
+    fn try_parse_optional_arg(&mut self) -> Result<AstNode> {
+        // Try to parse a string literal or identifier
+        if let Some(token) = self.peek() {
+            match &token.token_type {
+                TokenType::Symbol(Symbol::StringLiteral(_)) |
+                TokenType::Symbol(Symbol::Identifier(_)) => {
+                    self.parse_primary()
+                }
+                _ => Err(AetherError::ParserError("Expected argument".to_string()))
+            }
+        } else {
+            Err(AetherError::UnexpectedEof)
         }
     }
 }

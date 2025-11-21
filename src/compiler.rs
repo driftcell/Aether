@@ -726,6 +726,86 @@ impl Compiler {
                 self.program.emit_opcode(Opcode::Infinity);
             }
             
+            // AI & Tensor Core (v1.4) - Stub implementations for now
+            AstNode::Brain { prompt, model } => {
+                self.compile_node(prompt)?;
+                if let Some(m) = model {
+                    self.compile_node(m)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                // For now, emit a placeholder opcode that runtime will handle
+                // In a full implementation, we'd add Opcode::Brain to bytecode.rs
+                return Err(AetherError::CompilerError("Brain operation not yet supported in bytecode".to_string()));
+            }
+            
+            AstNode::Dna { text } => {
+                self.compile_node(text)?;
+                return Err(AetherError::CompilerError("Dna operation not yet supported in bytecode".to_string()));
+            }
+            
+            AstNode::Tensor { dimensions } => {
+                self.compile_node(dimensions)?;
+                return Err(AetherError::CompilerError("Tensor operation not yet supported in bytecode".to_string()));
+            }
+            
+            AstNode::Track { query_vector, collection, top_k } => {
+                self.compile_node(query_vector)?;
+                self.compile_node(collection)?;
+                if let Some(k) = top_k {
+                    self.compile_node(k)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                return Err(AetherError::CompilerError("Track operation not yet supported in bytecode".to_string()));
+            }
+            
+            // Cloud & Distributed (v1.5)
+            AstNode::Mailbox { data, topic } => {
+                self.compile_node(data)?;
+                self.compile_node(topic)?;
+                return Err(AetherError::CompilerError("Mailbox operation not yet supported in bytecode".to_string()));
+            }
+            
+            AstNode::CloudFunction { name: _, body } => {
+                self.compile_node(body)?;
+                return Err(AetherError::CompilerError("CloudFunction operation not yet supported in bytecode".to_string()));
+            }
+            
+            AstNode::RacingCarCache { key, value, ttl } => {
+                self.compile_node(key)?;
+                self.compile_node(value)?;
+                if let Some(t) = ttl {
+                    self.compile_node(t)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                return Err(AetherError::CompilerError("RacingCarCache operation not yet supported in bytecode".to_string()));
+            }
+            
+            AstNode::Stethoscope { body } => {
+                self.compile_node(body)?;
+                return Err(AetherError::CompilerError("Stethoscope operation not yet supported in bytecode".to_string()));
+            }
+            
+            // Time & Scheduler (v1.6)
+            AstNode::Sleep { duration } => {
+                self.compile_node(duration)?;
+                return Err(AetherError::CompilerError("Sleep operation not yet supported in bytecode".to_string()));
+            }
+            
+            AstNode::AlarmClock { schedule, body } => {
+                self.compile_node(schedule)?;
+                self.compile_node(body)?;
+                return Err(AetherError::CompilerError("AlarmClock operation not yet supported in bytecode".to_string()));
+            }
+            
+            AstNode::Hourglass { duration, body } => {
+                self.compile_node(duration)?;
+                self.compile_node(body)?;
+                return Err(AetherError::CompilerError("Hourglass operation not yet supported in bytecode".to_string()));
+            }
+            
             _ => {
                 return Err(AetherError::CompilerError(format!(
                     "Unsupported AST node: {:?}",

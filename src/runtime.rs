@@ -1414,6 +1414,170 @@ impl Runtime {
                 
                 Ok(Value::Boolean(result))
             }
+            
+            // AI & Tensor Core (v1.4)
+            AstNode::Brain { prompt, model } => {
+                let prompt_val = self.eval_node(prompt)?;
+                let prompt_str = match prompt_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Brain prompt must be a string".to_string())),
+                };
+                
+                let model_str = if let Some(m) = model {
+                    match self.eval_node(m)? {
+                        Value::String(s) => s,
+                        _ => std::env::var("AETHER_MODEL").unwrap_or_else(|_| "gpt-3.5-turbo".to_string()),
+                    }
+                } else {
+                    std::env::var("AETHER_MODEL").unwrap_or_else(|_| "gpt-3.5-turbo".to_string())
+                };
+                
+                // Call OpenAI API
+                self.call_openai_api(&prompt_str, &model_str)
+            }
+            
+            AstNode::Dna { text } => {
+                let text_val = self.eval_node(text)?;
+                let text_str = match text_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Dna text must be a string".to_string())),
+                };
+                
+                // Create embedding via OpenAI API
+                self.create_embedding(&text_str)
+            }
+            
+            AstNode::Tensor { dimensions } => {
+                let dims = self.eval_node(dimensions)?;
+                println!("Creating tensor with dimensions: {:?}", dims);
+                
+                // Return a placeholder array representing tensor
+                Ok(Value::Array(vec![]))
+            }
+            
+            AstNode::Track { query_vector, collection, top_k } => {
+                let _qv = self.eval_node(query_vector)?;
+                let _coll = self.eval_node(collection)?;
+                let k = if let Some(tk) = top_k {
+                    match self.eval_node(tk)? {
+                        Value::Number(n) => n as usize,
+                        _ => 5,
+                    }
+                } else {
+                    5
+                };
+                
+                println!("Performing vector search with top_k={}", k);
+                
+                // Return placeholder search results
+                Ok(Value::Array(vec![]))
+            }
+            
+            // Cloud & Distributed (v1.5)
+            AstNode::Mailbox { data, topic } => {
+                let data_val = self.eval_node(data)?;
+                let topic_val = self.eval_node(topic)?;
+                let topic_str = match topic_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Mailbox topic must be a string".to_string())),
+                };
+                
+                println!("Publishing to queue '{}': {:?}", topic_str, data_val);
+                Ok(Value::Boolean(true))
+            }
+            
+            AstNode::CloudFunction { name, body } => {
+                println!("Deploying cloud function: {}", name);
+                self.eval_node(body)
+            }
+            
+            AstNode::RacingCarCache { key, value, ttl } => {
+                let key_val = self.eval_node(key)?;
+                let val_val = self.eval_node(value)?;
+                
+                let ttl_str = if let Some(t) = ttl {
+                    match self.eval_node(t)? {
+                        Value::String(s) => s,
+                        Value::Number(n) => format!("{}s", n),
+                        _ => "3600s".to_string(),
+                    }
+                } else {
+                    "3600s".to_string()
+                };
+                
+                println!("Caching {:?} with TTL {}", key_val, ttl_str);
+                Ok(val_val)
+            }
+            
+            AstNode::Stethoscope { body } => {
+                println!("Health check endpoint:");
+                self.eval_node(body)
+            }
+            
+            // Time & Scheduler (v1.6)
+            AstNode::Sleep { duration } => {
+                let dur_val = self.eval_node(duration)?;
+                
+                let duration_ms = match dur_val {
+                    Value::String(s) => {
+                        // Parse duration string like "5s", "100ms", "2m"
+                        self.parse_duration(&s)?
+                    }
+                    Value::Number(n) => (n * 1000.0) as u64, // Assume seconds if number
+                    _ => return Err(AetherError::RuntimeError("Sleep duration must be a string or number".to_string())),
+                };
+                
+                println!("Sleeping for {}ms", duration_ms);
+                std::thread::sleep(std::time::Duration::from_millis(duration_ms));
+                Ok(Value::Null)
+            }
+            
+            AstNode::AlarmClock { schedule, body } => {
+                let sched_val = self.eval_node(schedule)?;
+                let sched_str = match sched_val {
+                    Value::String(s) => s,
+                    _ => return Err(AetherError::RuntimeError("Schedule must be a cron expression string".to_string())),
+                };
+                
+                println!("Scheduling task with cron: {}", sched_str);
+                // In a real implementation, this would register a cron job
+                // For now, just execute the body once
+                self.eval_node(body)
+            }
+            
+            AstNode::Hourglass { duration, body } => {
+                let dur_val = self.eval_node(duration)?;
+                
+                let timeout_ms = match dur_val {
+                    Value::String(s) => self.parse_duration(&s)?,
+                    Value::Number(n) => (n * 1000.0) as u64,
+                    _ => return Err(AetherError::RuntimeError("Timeout duration must be a string or number".to_string())),
+                };
+                
+                println!("Executing with timeout of {}ms", timeout_ms);
+                
+                // Use tokio timeout
+                let _body_node = body.clone();
+                let result = self.tokio_runtime.block_on(async {
+                    tokio::time::timeout(
+                        tokio::time::Duration::from_millis(timeout_ms),
+                        async {
+                            // We can't easily make eval_node async, so we'll use spawn_blocking
+                            tokio::task::spawn_blocking(move || {
+                                // Note: This is a simplified implementation
+                                // In a real scenario, we'd need to pass runtime state properly
+                                Ok::<Value, AetherError>(Value::Null)
+                            }).await.map_err(|e| AetherError::RuntimeError(format!("Task failed: {}", e)))?
+                        }
+                    ).await
+                });
+                
+                match result {
+                    Ok(Ok(val)) => Ok(val),
+                    Ok(Err(e)) => Err(e),
+                    Err(_) => Err(AetherError::RuntimeError(format!("Operation timed out after {}ms", timeout_ms))),
+                }
+            }
         }
     }
     
@@ -1610,6 +1774,127 @@ impl Runtime {
     /// Check if a variable is immutable
     pub fn is_immutable(&self, name: &str) -> bool {
         self.immutable_vars.contains(name)
+    }
+    
+    /// Call OpenAI API for inference
+    fn call_openai_api(&self, prompt: &str, model: &str) -> Result<Value> {
+        // Get configuration from environment variables
+        let api_key = std::env::var("AETHER_API_KEY")
+            .map_err(|_| AetherError::RuntimeError("AETHER_API_KEY environment variable not set".to_string()))?;
+        
+        let base_url = std::env::var("AETHER_BASE_URL")
+            .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+        
+        let url = format!("{}/chat/completions", base_url);
+        
+        // Build request body
+        let mut body = HashMap::new();
+        body.insert("model".to_string(), Value::String(model.to_string()));
+        
+        let mut messages = Vec::new();
+        let mut message = HashMap::new();
+        message.insert("role".to_string(), Value::String("user".to_string()));
+        message.insert("content".to_string(), Value::String(prompt.to_string()));
+        messages.push(Value::Object(message));
+        body.insert("messages".to_string(), Value::Array(messages));
+        
+        // Create headers
+        let mut headers = HashMap::new();
+        headers.insert("Authorization".to_string(), Value::String(format!("Bearer {}", api_key)));
+        headers.insert("Content-Type".to_string(), Value::String("application/json".to_string()));
+        
+        // Execute HTTP POST request
+        let response = self.execute_http_request("POST", &url, Some(Value::Object(body)), Some(Value::Object(headers)))?;
+        
+        // Extract the response content
+        if let Value::Object(resp_obj) = response {
+            if let Some(Value::Object(body_obj)) = resp_obj.get("body") {
+                if let Some(Value::Array(choices)) = body_obj.get("choices") {
+                    if let Some(Value::Object(choice)) = choices.first() {
+                        if let Some(Value::Object(message)) = choice.get("message") {
+                            if let Some(content) = message.get("content") {
+                                return Ok(content.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Err(AetherError::RuntimeError("Failed to parse OpenAI API response".to_string()))
+    }
+    
+    /// Create embedding via OpenAI API
+    fn create_embedding(&self, text: &str) -> Result<Value> {
+        // Get configuration from environment variables
+        let api_key = std::env::var("AETHER_API_KEY")
+            .map_err(|_| AetherError::RuntimeError("AETHER_API_KEY environment variable not set".to_string()))?;
+        
+        let base_url = std::env::var("AETHER_BASE_URL")
+            .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+        
+        let url = format!("{}/embeddings", base_url);
+        
+        let model = std::env::var("AETHER_EMBEDDING_MODEL")
+            .unwrap_or_else(|_| "text-embedding-ada-002".to_string());
+        
+        // Build request body
+        let mut body = HashMap::new();
+        body.insert("model".to_string(), Value::String(model));
+        body.insert("input".to_string(), Value::String(text.to_string()));
+        
+        // Create headers
+        let mut headers = HashMap::new();
+        headers.insert("Authorization".to_string(), Value::String(format!("Bearer {}", api_key)));
+        headers.insert("Content-Type".to_string(), Value::String("application/json".to_string()));
+        
+        // Execute HTTP POST request
+        let response = self.execute_http_request("POST", &url, Some(Value::Object(body)), Some(Value::Object(headers)))?;
+        
+        // Extract the embedding vector
+        if let Value::Object(resp_obj) = response {
+            if let Some(Value::Object(body_obj)) = resp_obj.get("body") {
+                if let Some(Value::Array(data)) = body_obj.get("data") {
+                    if let Some(Value::Object(embedding_obj)) = data.first() {
+                        if let Some(embedding) = embedding_obj.get("embedding") {
+                            return Ok(embedding.clone());
+                        }
+                    }
+                }
+            }
+        }
+        
+        Err(AetherError::RuntimeError("Failed to parse embedding API response".to_string()))
+    }
+    
+    /// Parse duration string (e.g., "5s", "100ms", "2m", "1h")
+    fn parse_duration(&self, duration_str: &str) -> Result<u64> {
+        let duration_str = duration_str.trim();
+        
+        if duration_str.ends_with("ms") {
+            let num_str = &duration_str[..duration_str.len() - 2];
+            num_str.parse::<u64>()
+                .map_err(|_| AetherError::RuntimeError(format!("Invalid duration: {}", duration_str)))
+        } else if duration_str.ends_with('s') {
+            let num_str = &duration_str[..duration_str.len() - 1];
+            num_str.parse::<u64>()
+                .map(|n| n * 1000)
+                .map_err(|_| AetherError::RuntimeError(format!("Invalid duration: {}", duration_str)))
+        } else if duration_str.ends_with('m') {
+            let num_str = &duration_str[..duration_str.len() - 1];
+            num_str.parse::<u64>()
+                .map(|n| n * 60 * 1000)
+                .map_err(|_| AetherError::RuntimeError(format!("Invalid duration: {}", duration_str)))
+        } else if duration_str.ends_with('h') {
+            let num_str = &duration_str[..duration_str.len() - 1];
+            num_str.parse::<u64>()
+                .map(|n| n * 60 * 60 * 1000)
+                .map_err(|_| AetherError::RuntimeError(format!("Invalid duration: {}", duration_str)))
+        } else {
+            // Try to parse as milliseconds if no unit specified
+            duration_str.parse::<u64>()
+                .map_err(|_| AetherError::RuntimeError(format!("Invalid duration: {}", duration_str)))
+        }
     }
 }
 

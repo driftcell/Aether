@@ -238,6 +238,34 @@ pub enum Symbol {
     /// 📶 - Send/capture system signal
     Signal,
     
+    // AI & Tensor Core (v1.4)
+    /// 🧠 - Inference/Model Call
+    Brain,
+    /// 🧬 - Embedding/Vectorize
+    Dna,
+    /// 📐 - Tensor/Matrix
+    Tensor,
+    /// 🛤️ - Vector Search/KNN
+    Track,
+    
+    // Cloud & Distributed (v1.5)
+    /// 📬 - Message Queue/Pub-Sub
+    Mailbox,
+    /// ☁️ - Serverless/Deploy
+    Cloud,
+    /// 🏎️ - Cache/Fast Access
+    RacingCar,
+    /// 🩺 - Health Check/Heartbeat
+    Stethoscope,
+    
+    // Time & Scheduler (v1.6)
+    /// 💤 - Sleep/Delay
+    Sleep,
+    /// ⏰ - Schedule/Cron
+    AlarmClock,
+    /// ⌛ - Timeout/Deadline
+    Hourglass,
+    
     // Variables and identifiers
     /// Generic identifier
     Identifier(String),
@@ -361,6 +389,20 @@ impl Symbol {
             "🐏" => Some(Symbol::Memory),
             "👋" => Some(Symbol::Exit),
             "📶" => Some(Symbol::Signal),
+            // AI & Tensor Core (v1.4)
+            "🧠" => Some(Symbol::Brain),
+            "🧬" => Some(Symbol::Dna),
+            "📐" => Some(Symbol::Tensor),
+            "🛤️" => Some(Symbol::Track),
+            // Cloud & Distributed (v1.5)
+            "📬" => Some(Symbol::Mailbox),
+            "☁️" => Some(Symbol::Cloud),
+            "🏎️" => Some(Symbol::RacingCar),
+            "🩺" => Some(Symbol::Stethoscope),
+            // Time & Scheduler (v1.6)
+            "💤" => Some(Symbol::Sleep),
+            "⏰" => Some(Symbol::AlarmClock),
+            "⌛" => Some(Symbol::Hourglass),
             _ => None,
         }
     }
@@ -477,6 +519,20 @@ impl Symbol {
             Symbol::Memory => "🐏".to_string(),
             Symbol::Exit => "👋".to_string(),
             Symbol::Signal => "📶".to_string(),
+            // AI & Tensor Core (v1.4)
+            Symbol::Brain => "🧠".to_string(),
+            Symbol::Dna => "🧬".to_string(),
+            Symbol::Tensor => "📐".to_string(),
+            Symbol::Track => "🛤️".to_string(),
+            // Cloud & Distributed (v1.5)
+            Symbol::Mailbox => "📬".to_string(),
+            Symbol::Cloud => "☁️".to_string(),
+            Symbol::RacingCar => "🏎️".to_string(),
+            Symbol::Stethoscope => "🩺".to_string(),
+            // Time & Scheduler (v1.6)
+            Symbol::Sleep => "💤".to_string(),
+            Symbol::AlarmClock => "⏰".to_string(),
+            Symbol::Hourglass => "⌛".to_string(),
             Symbol::Identifier(id) => id.clone(),
             Symbol::StringLiteral(s) => format!("\"{}\"", s),
             Symbol::NumberLiteral(n) => n.to_string(),
@@ -597,6 +653,20 @@ impl Symbol {
             Symbol::Memory => "Memory operations/manual allocation",
             Symbol::Exit => "Exit program (with exit code)",
             Symbol::Signal => "Send/capture system signal",
+            // AI & Tensor Core (v1.4)
+            Symbol::Brain => "AI Inference/Model Call",
+            Symbol::Dna => "Embedding/Vectorize text to vector",
+            Symbol::Tensor => "Tensor/Matrix definition",
+            Symbol::Track => "Vector Search/KNN similarity search",
+            // Cloud & Distributed (v1.5)
+            Symbol::Mailbox => "Message Queue/Pub-Sub",
+            Symbol::Cloud => "Serverless/Cloud function deployment",
+            Symbol::RacingCar => "Cache/Fast access (Redis-like)",
+            Symbol::Stethoscope => "Health Check/Heartbeat endpoint",
+            // Time & Scheduler (v1.6)
+            Symbol::Sleep => "Sleep/Delay execution",
+            Symbol::AlarmClock => "Schedule/Cron task",
+            Symbol::Hourglass => "Timeout/Deadline constraint",
             Symbol::Identifier(_) => "Identifier",
             Symbol::StringLiteral(_) => "String literal",
             Symbol::NumberLiteral(_) => "Number literal",
