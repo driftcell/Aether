@@ -1409,7 +1409,9 @@ impl Runtime {
                 if let Some(n_val) = serde_json::Number::from_f64(*n) {
                     serde_json::Value::Number(n_val)
                 } else {
-                    serde_json::Value::Null
+                    // NaN, Infinity, or -Infinity - use string representation
+                    eprintln!("Warning: Non-finite number {:?} converted to string in JSON", n);
+                    serde_json::Value::String(n.to_string())
                 }
             }
             Value::Boolean(b) => serde_json::Value::Bool(*b),
@@ -1434,8 +1436,9 @@ impl Runtime {
         // Parse using serde_json
         match serde_json::from_str::<serde_json::Value>(json) {
             Ok(json_val) => Ok(self.serde_json_to_value(&json_val)),
-            Err(_) => {
-                // If parsing fails, return as string
+            Err(e) => {
+                // If parsing fails, log the error and return as string
+                eprintln!("JSON parsing failed: {} - returning as string", e);
                 Ok(Value::String(json.to_string()))
             }
         }
