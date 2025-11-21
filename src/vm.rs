@@ -353,9 +353,50 @@ impl VM {
                 }
                 
                 Opcode::ForEach => {
-                    let _var_idx = self.read_u32()?;
-                    // ForEach implementation would iterate over collection
-                    // For now, simplified
+                    let var_idx = self.read_u32()? as usize;
+                    let var_name = self.program.constants.get(var_idx)
+                        .ok_or_else(|| AetherError::RuntimeError(
+                            format!("Invalid constant index: {}", var_idx)
+                        ))?
+                        .clone();
+                    
+                    // Get collection from stack
+                    let collection = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    
+                    // If no collection (Null), skip the foreach body
+                    // We need to find the matching LoopEnd and jump past it
+                    if matches!(collection, Value::Null) {
+                        // Skip until we find the matching LoopEnd
+                        let mut depth = 1;
+                        while depth > 0 && self.pc < self.program.code.len() {
+                            let opcode_byte = self.program.code[self.pc];
+                            if let Ok(opcode) = Opcode::from_byte(opcode_byte) {
+                                match opcode {
+                                    Opcode::ForEach | Opcode::LoopStart => depth += 1,
+                                    Opcode::LoopEnd => {
+                                        depth -= 1;
+                                        if depth == 0 {
+                                            // Skip past the LoopEnd instruction and its u32 parameter
+                                            self.pc += 1 + 4;
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            if depth > 0 {
+                                self.pc += 1;
+                            }
+                        }
+                        self.stack.push(Value::Null);
+                    } else {
+                        // Store the collection and variable info for the loop to use
+                        // For simplicity, just push null and let the body execute once
+                        // A full implementation would iterate over array elements
+                        self.variables.insert(var_name, Value::Null);
+                        // Note: This is a simplified implementation
+                        // Full ForEach iteration is complex in bytecode and not fully implemented
+                    }
                 }
                 
                 Opcode::Hash => {
