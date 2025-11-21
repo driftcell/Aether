@@ -57,11 +57,15 @@ impl Explainer {
             }
             
             AstNode::Pipe { source, operation } => {
-                format!(
-                    "{} | {}",
-                    self.explain_node(source),
-                    self.explain_node(operation)
-                )
+                let source_str = self.explain_node(source);
+                let operation_str = self.explain_node(operation);
+                
+                // If source is the special _pipe variable, simplify output
+                if source_str == "_pipe" {
+                    operation_str
+                } else {
+                    format!("{} | {}", source_str, operation_str)
+                }
             }
             
             AstNode::PipeInto { value, variable } => {
@@ -288,11 +292,15 @@ impl Explainer {
             }
             
             AstNode::Approx { left, right } => {
-                format!(
-                    "({} ≈ {})",
-                    self.explain_node(left),
-                    self.explain_node(right)
-                )
+                let left_str = self.explain_node(left);
+                let right_str = self.explain_node(right);
+                
+                // If left is the special _pipe variable, simplify output
+                if left_str == "_pipe" {
+                    format!("(piped value) ≈ {}", right_str)
+                } else {
+                    format!("({} ≈ {})", left_str, right_str)
+                }
             }
             
             AstNode::HttpGet { url, headers } => {
@@ -350,11 +358,15 @@ impl Explainer {
             }
             
             AstNode::Power { base, exponent } => {
-                format!(
-                    "{} raised to the power of {}",
-                    self.explain_node(base),
-                    self.explain_node(exponent)
-                )
+                let base_str = self.explain_node(base);
+                let exp_str = self.explain_node(exponent);
+                
+                // If base is the special _pipe variable, simplify output
+                if base_str == "_pipe" {
+                    format!("(piped value) raised to the power of {}", exp_str)
+                } else {
+                    format!("{} raised to the power of {}", base_str, exp_str)
+                }
             }
             
             AstNode::Root { value } => {
