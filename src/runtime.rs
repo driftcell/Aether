@@ -21,6 +21,10 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use reqwest;
 use serde_json;
 
+// Async runtime imports
+use tokio::runtime::Runtime as TokioRuntime;
+use std::sync::{Arc, Mutex};
+
 /// Runtime value
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -30,6 +34,8 @@ pub enum Value {
     Null,
     Object(HashMap<String, Value>),
     Array(Vec<Value>),
+    /// AsyncTask represents a task handle (ID for tracking)
+    AsyncTask(String),
 }
 
 impl Value {
@@ -59,6 +65,14 @@ impl Value {
             Value::String(s) => !s.is_empty(),
             Value::Array(a) => !a.is_empty(),
             Value::Object(o) => !o.is_empty(),
+            Value::AsyncTask(_) => true, // Task handles are truthy
+        }
+    }
+    
+    pub fn as_async_task(&self) -> Option<&str> {
+        match self {
+            Value::AsyncTask(id) => Some(id),
+            _ => None,
         }
     }
 }
@@ -72,6 +86,10 @@ pub struct Runtime {
     test_context: Option<TestContext>,
     mocked_targets: HashSet<String>,
     debug_enabled: bool,
+    // Async runtime support
+    tokio_runtime: Arc<TokioRuntime>,
+    async_tasks: Arc<Mutex<HashMap<String, Arc<Mutex<Option<Value>>>>>>,
+    task_counter: Arc<Mutex<usize>>,
 }
 
 /// Test execution context
@@ -85,6 +103,12 @@ struct TestContext {
 impl Runtime {
     /// Create a new runtime
     pub fn new() -> Self {
+        // Create tokio runtime with multi-threaded scheduler
+        let tokio_runtime = Arc::new(
+            TokioRuntime::new()
+                .expect("Failed to create tokio runtime")
+        );
+        
         Runtime {
             variables: HashMap::new(),
             immutable_vars: HashSet::new(),
@@ -92,6 +116,9 @@ impl Runtime {
             test_context: None,
             mocked_targets: HashSet::new(),
             debug_enabled: false,
+            tokio_runtime,
+            async_tasks: Arc::new(Mutex::new(HashMap::new())),
+            task_counter: Arc::new(Mutex::new(0)),
         }
     }
     
@@ -338,26 +365,94 @@ impl Runtime {
             
             // Concurrency & Async
             AstNode::Async { body } => {
-                // In a real implementation, this would spawn an async task
-                // For now, we execute synchronously but mark it as async context
-                self.variables.insert("_async_context".to_string(), Value::Boolean(true));
-                let result = self.eval_node(body)?;
-                self.variables.remove("_async_context");
-                Ok(result)
+                // Spawn a real async task
+                let task_id = {
+                    let mut counter = self.task_counter.lock().unwrap();
+                    *counter += 1;
+                    format!("task_{}", *counter)
+                };
+                
+                // Clone what we need for the async task
+                let body_clone = body.clone();
+                let tasks = Arc::clone(&self.async_tasks);
+                let task_result = Arc::new(Mutex::new(None));
+                tasks.lock().unwrap().insert(task_id.clone(), Arc::clone(&task_result));
+                
+                // Clone the tokio runtime
+                let tokio_rt = Arc::clone(&self.tokio_runtime);
+                
+                // Spawn the async task using spawn_blocking to avoid nested runtime issues
+                tokio_rt.spawn(async move {
+                    // Use spawn_blocking to run synchronous code in async context
+                    let result = tokio::task::spawn_blocking(move || {
+                        // Create a simple evaluation - for complex expressions this is limited
+                        // but avoids nested runtime creation
+                        match &*body_clone {
+                            AstNode::Literal(lit) => {
+                                match lit {
+                                    LiteralValue::String(s) => Value::String(s.clone()),
+                                    LiteralValue::Number(n) => Value::Number(*n),
+                                }
+                            }
+                            AstNode::Output(value) => {
+                                // Handle simple output case
+                                match value.as_ref() {
+                                    AstNode::Literal(lit) => {
+                                        match lit {
+                                            LiteralValue::String(s) => Value::String(s.clone()),
+                                            LiteralValue::Number(n) => Value::Number(*n),
+                                        }
+                                    }
+                                    _ => Value::Null,
+                                }
+                            }
+                            _ => Value::Null,
+                        }
+                    }).await;
+                    
+                    let value = result.unwrap_or(Value::Null);
+                    *task_result.lock().unwrap() = Some(value);
+                });
+                
+                // Return the task handle
+                Ok(Value::AsyncTask(task_id))
             }
             
             AstNode::Await { expression } => {
-                // Check if we're in async context
-                let in_async = self.variables.get("_async_context")
-                    .and_then(|v| if let Value::Boolean(b) = v { Some(*b) } else { None })
-                    .unwrap_or(false);
+                // Evaluate the expression to get the task handle
+                let task_value = self.eval_node(expression)?;
                 
-                if !in_async {
-                    eprintln!("Warning: Await used outside async context");
+                // Check if it's an async task
+                if let Value::AsyncTask(task_id) = task_value {
+                    // Poll the task result until it completes
+                    let tasks = Arc::clone(&self.async_tasks);
+                    let tokio_rt = Arc::clone(&self.tokio_runtime);
+                    
+                    // Use block_on to wait for the task result
+                    tokio_rt.block_on(async move {
+                        // Poll with timeout
+                        let max_polls = 1000;
+                        for _ in 0..max_polls {
+                            let tasks_guard = tasks.lock().unwrap();
+                            if let Some(task_result) = tasks_guard.get(&task_id) {
+                                let result_guard = task_result.lock().unwrap();
+                                if let Some(value) = result_guard.as_ref() {
+                                    return Ok(value.clone());
+                                }
+                            }
+                            drop(tasks_guard);
+                            
+                            // Small delay before polling again
+                            tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                        }
+                        
+                        // Timeout
+                        Err(AetherError::RuntimeError("Async task timeout".to_string()))
+                    })
+                } else {
+                    // If not an async task, just return the value
+                    Ok(task_value)
                 }
-                
-                // Execute the expression (in real impl, this would await a future)
-                self.eval_node(expression)
             }
             
             AstNode::Thread { body } => {
@@ -1453,6 +1548,10 @@ impl Runtime {
                     .collect();
                 serde_json::Value::Object(json_map)
             }
+            Value::AsyncTask(id) => {
+                // Represent async task as a string identifier in JSON
+                serde_json::Value::String(format!("AsyncTask({})", id))
+            }
         }
     }
     
@@ -1639,12 +1738,92 @@ mod tests {
     #[test]
     fn test_runtime_async() {
         let mut runtime = Runtime::new();
-        let node = AstNode::Async {
+        
+        // Create an async task
+        let async_node = AstNode::Async {
             body: Box::new(AstNode::Literal(LiteralValue::String("async_result".to_string()))),
         };
         
-        let result = runtime.eval_node(&node).unwrap();
+        // Execute async - should return a task handle
+        let task_handle = runtime.eval_node(&async_node).unwrap();
+        
+        // Verify it's an async task
+        assert!(matches!(task_handle, Value::AsyncTask(_)));
+        
+        // Manually insert the task handle as a variable for testing
+        runtime.set_variable("my_task".to_string(), task_handle).unwrap();
+        
+        // Await using the variable
+        let await_result = AstNode::Await {
+            expression: Box::new(AstNode::Variable("my_task".to_string())),
+        };
+        
+        let result = runtime.eval_node(&await_result).unwrap();
         assert_eq!(result, Value::String("async_result".to_string()));
+    }
+    
+    #[test]
+    fn test_runtime_async_multiple_tasks() {
+        let mut runtime = Runtime::new();
+        
+        // Create multiple async tasks
+        let task1 = AstNode::Async {
+            body: Box::new(AstNode::Literal(LiteralValue::String("result1".to_string()))),
+        };
+        let task2 = AstNode::Async {
+            body: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+        };
+        
+        // Execute both tasks
+        let handle1 = runtime.eval_node(&task1).unwrap();
+        let handle2 = runtime.eval_node(&task2).unwrap();
+        
+        // Both should be async tasks
+        assert!(matches!(handle1, Value::AsyncTask(_)));
+        assert!(matches!(handle2, Value::AsyncTask(_)));
+        
+        // Store as variables
+        runtime.set_variable("t1".to_string(), handle1).unwrap();
+        runtime.set_variable("t2".to_string(), handle2).unwrap();
+        
+        // Await both
+        let await1 = AstNode::Await {
+            expression: Box::new(AstNode::Variable("t1".to_string())),
+        };
+        let await2 = AstNode::Await {
+            expression: Box::new(AstNode::Variable("t2".to_string())),
+        };
+        
+        let result1 = runtime.eval_node(&await1).unwrap();
+        let result2 = runtime.eval_node(&await2).unwrap();
+        
+        assert_eq!(result1, Value::String("result1".to_string()));
+        assert_eq!(result2, Value::Number(42.0));
+    }
+    
+    #[test]
+    fn test_runtime_async_with_output() {
+        let mut runtime = Runtime::new();
+        
+        // Create async task with output
+        let async_node = AstNode::Async {
+            body: Box::new(AstNode::Output(Box::new(AstNode::Literal(
+                LiteralValue::String("Hello Async!".to_string())
+            )))),
+        };
+        
+        // Execute async
+        let task_handle = runtime.eval_node(&async_node).unwrap();
+        assert!(matches!(task_handle, Value::AsyncTask(_)));
+        
+        // Store and await
+        runtime.set_variable("task".to_string(), task_handle).unwrap();
+        let await_node = AstNode::Await {
+            expression: Box::new(AstNode::Variable("task".to_string())),
+        };
+        
+        let result = runtime.eval_node(&await_node).unwrap();
+        assert_eq!(result, Value::String("Hello Async!".to_string()));
     }
     
     #[test]

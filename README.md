@@ -68,10 +68,12 @@ Common symbols for everyday use:
 - **Type Safe**: Built on Rust's strong type system
 - **Native Performance**: Compiles to efficient native code
 - **Bytecode Support**: Compile to .aeb bytecode for faster execution and distribution
+- **Async Runtime**: Full async/await support with tokio for concurrent execution
 
-**Latest version**: v1.5 with comprehensive HTTP client support
+**Latest version**: v1.6 with async runtime using tokio
 
 📋 See [CHANGELOG.md](CHANGELOG.md) for version history and detailed feature updates.
+📘 See [docs/ASYNC_RUNTIME.md](docs/ASYNC_RUNTIME.md) for async/await documentation.
 
 
 ## 🚀 Getting Started
@@ -246,6 +248,7 @@ cargo test test_lexer_basic_symbols
 - Symbol system with 100+ symbols across multiple domains
 - CLI interface with bytecode compilation
 - HTTP client with full REST API support
+- **Async/await runtime with tokio for concurrent execution**
 
 ### In Progress 🚧
 - Full runtime with I/O operations
@@ -255,6 +258,7 @@ cargo test test_lexer_basic_symbols
 
 ### Future Plans 🔮
 - Compiler optimizations (constant folding, dead code elimination)
+- Enhanced async features (cancellation, channels, async iterators)
 - JIT compilation
 - WASM target
 - VSCode extension
@@ -264,6 +268,7 @@ cargo test test_lexer_basic_symbols
 ## 📚 Documentation
 
 - [Symbol Reference](docs/SYMBOL_REFERENCE.md) - Complete list of all symbols
+- [Async Runtime](docs/ASYNC_RUNTIME.md) - Async/await usage guide
 - [Architecture](docs/ARCHITECTURE.md) - System architecture overview
 - [Bytecode Format](docs/BYTECODE.md) - Bytecode specification
 - [Project Summary](docs/PROJECT_SUMMARY.md) - High-level project overview

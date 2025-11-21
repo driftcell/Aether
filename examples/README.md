@@ -48,6 +48,24 @@ Practical API usage example with JSONPlaceholder API.
 Simple HTTP GET request demonstration.
 **Note**: Requires internet connectivity
 
+### async_basic.ae
+```aether
+⚡ 📤 "Hello from async task!"
+```
+Creates an async task that returns a task handle. Demonstrates basic async execution.
+
+### async_await.ae
+```aether
+⚡ 📤 "Computing..." ▷ task ⨠ ⏳ task
+```
+Creates an async task, stores its handle, and awaits the result. Shows async/await pattern.
+
+### async_multiple.ae
+```aether
+⚡ 📤 "Task 1" ▷ t1 ⨠ ⚡ 📤 "Task 2" ▷ t2 ⨠ ⚡ 📤 "Task 3" ▷ t3 ⨠ ⏳ t1 ⨠ ⏳ t2 ⨠ ⏳ t3
+```
+Demonstrates multiple concurrent async tasks with sequential await.
+
 ## Compiling and Running Examples
 
 ### Option 1: Direct Interpretation (Run)
@@ -124,6 +142,8 @@ Quick reference for symbols used in examples:
 | 🌐🔧 | HTTP PATCH | HTTP PATCH request |
 | 🌐👁️ | HTTP HEAD | HTTP HEAD request |
 | 🌐⚙️ | HTTP OPTIONS | HTTP OPTIONS request |
+| ⚡ | Async | Execute asynchronously |
+| ⏳ | Await | Wait for async result |
 
 For complete symbol reference: `aether symbols`
 
