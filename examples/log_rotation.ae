@@ -1,9 +1,10 @@
 // Log rotation example (v1.3)
 // Check log size and rotate if necessary
+// Note: 1GB = 1073741824 bytes
 
 ƒ log: 📥msg ⨠ 
   📄📍"/var/log/app.log" ▷ f ⨠
-  ◇(f.size > 1GB): (
+  ◇(f.size > 1073741824): (
     🐚"mv /var/log/app.log /var/log/app.old"
   ) ⨠
   msg ⇢ 🖇️f

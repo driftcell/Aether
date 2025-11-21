@@ -11,6 +11,11 @@ pub enum TokenType {
     Whitespace,
     Newline,
     Colon,
+    LeftParen,
+    RightParen,
+    Dot,
+    GreaterThan,
+    LessThan,
     Eof,
 }
 
@@ -74,6 +79,19 @@ impl Lexer {
         let start_pos = self.position;
         let current = &self.graphemes[self.position];
 
+        // Handle comments (// to end of line)
+        if current == "/" && self.position + 1 < self.graphemes.len() && self.graphemes[self.position + 1] == "/" {
+            // Skip to end of line
+            while self.position < self.graphemes.len() {
+                let ch = &self.graphemes[self.position];
+                self.position += 1;
+                if ch == "\n" || ch == "\r" {
+                    return Ok(Token::new(TokenType::Newline, start_pos, self.position - start_pos));
+                }
+            }
+            return Ok(Token::new(TokenType::Eof, self.position, 0));
+        }
+
         // Handle whitespace
         if current == " " || current == "\t" {
             self.position += 1;
@@ -90,6 +108,34 @@ impl Lexer {
         if current == ":" {
             self.position += 1;
             return Ok(Token::new(TokenType::Colon, start_pos, 1));
+        }
+
+        // Handle parentheses
+        if current == "(" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::LeftParen, start_pos, 1));
+        }
+
+        if current == ")" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::RightParen, start_pos, 1));
+        }
+
+        // Handle dot operator
+        if current == "." {
+            self.position += 1;
+            return Ok(Token::new(TokenType::Dot, start_pos, 1));
+        }
+
+        // Handle comparison operators
+        if current == ">" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::GreaterThan, start_pos, 1));
+        }
+
+        if current == "<" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::LessThan, start_pos, 1));
         }
 
         // Handle string literals

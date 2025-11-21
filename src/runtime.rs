@@ -200,8 +200,20 @@ impl Runtime {
 
             AstNode::Empty => Ok(Value::Null),
             
+            AstNode::IfThen { condition, then_branch, else_branch } => {
+                let cond_value = self.eval_node(condition)?;
+                
+                if cond_value.is_truthy() {
+                    self.eval_node(then_branch)
+                } else if let Some(else_node) = else_branch {
+                    self.eval_node(else_node)
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            
             // Control Flow & Iteration
-            AstNode::Loop { body } => {
+            AstNode::Loop { condition, body } => {
                 // Execute loop with safety limit
                 let mut iterations = 0;
                 let mut last_value = Value::Null;
@@ -213,10 +225,18 @@ impl Runtime {
                         ));
                     }
                     
+                    // Check condition if present
+                    if let Some(cond) = condition {
+                        let cond_value = self.eval_node(cond)?;
+                        if !cond_value.is_truthy() {
+                            break;
+                        }
+                    }
+                    
                     last_value = self.eval_node(body)?;
                     
-                    // Check for break condition (if result is Null or false, break)
-                    if !last_value.is_truthy() {
+                    // If no condition, check if result is falsy to break
+                    if condition.is_none() && !last_value.is_truthy() {
                         break;
                     }
                     
@@ -1128,6 +1148,37 @@ impl Runtime {
                 println!("Sending signal {:?} to {:?}", sig, tgt);
                 Ok(Value::Boolean(true))
             }
+            
+            AstNode::PropertyAccess { object, property } => {
+                let obj = self.eval_node(object)?;
+                
+                match obj {
+                    Value::Object(map) => {
+                        Ok(map.get(property).cloned().unwrap_or(Value::Null))
+                    }
+                    _ => Err(AetherError::RuntimeError(
+                        format!("Cannot access property '{}' on non-object value", property)
+                    ))
+                }
+            }
+            
+            AstNode::Comparison { left, operator, right } => {
+                use crate::parser::ComparisonOp;
+                let left_val = self.eval_node(left)?;
+                let right_val = self.eval_node(right)?;
+                
+                let result = match (left_val, right_val) {
+                    (Value::Number(l), Value::Number(r)) => {
+                        match operator {
+                            ComparisonOp::GreaterThan => l > r,
+                            ComparisonOp::LessThan => l < r,
+                        }
+                    }
+                    _ => false,
+                };
+                
+                Ok(Value::Boolean(result))
+            }
         }
     }
 
@@ -1498,6 +1549,7 @@ mod tests {
         
         // Simple loop that returns null (falsy) immediately
         let node = AstNode::Loop {
+            condition: None,
             body: Box::new(AstNode::Literal(LiteralValue::Number(0.0))),
         };
         
