@@ -468,6 +468,264 @@ impl Compiler {
                 self.program.emit_opcode(Opcode::PushNull);
             }
             
+            // HTTP operations
+            AstNode::HttpGet { url, headers } => {
+                self.compile_node(url)?;
+                if let Some(h) = headers {
+                    self.compile_node(h)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                self.program.emit_opcode(Opcode::HttpGet);
+            }
+            
+            AstNode::HttpPost { url, body, headers } => {
+                self.compile_node(url)?;
+                if let Some(b) = body {
+                    self.compile_node(b)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                if let Some(h) = headers {
+                    self.compile_node(h)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                self.program.emit_opcode(Opcode::HttpPost);
+            }
+            
+            AstNode::HttpPut { url, body, headers } => {
+                self.compile_node(url)?;
+                if let Some(b) = body {
+                    self.compile_node(b)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                if let Some(h) = headers {
+                    self.compile_node(h)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                self.program.emit_opcode(Opcode::HttpPut);
+            }
+            
+            AstNode::HttpDelete { url, headers } => {
+                self.compile_node(url)?;
+                if let Some(h) = headers {
+                    self.compile_node(h)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                self.program.emit_opcode(Opcode::HttpDelete);
+            }
+            
+            AstNode::HttpPatch { url, body, headers } => {
+                self.compile_node(url)?;
+                if let Some(b) = body {
+                    self.compile_node(b)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                if let Some(h) = headers {
+                    self.compile_node(h)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                self.program.emit_opcode(Opcode::HttpPatch);
+            }
+            
+            AstNode::HttpHead { url, headers } => {
+                self.compile_node(url)?;
+                if let Some(h) = headers {
+                    self.compile_node(h)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                self.program.emit_opcode(Opcode::HttpHead);
+            }
+            
+            AstNode::HttpOptions { url, headers } => {
+                self.compile_node(url)?;
+                if let Some(h) = headers {
+                    self.compile_node(h)?;
+                } else {
+                    self.program.emit_opcode(Opcode::PushNull);
+                }
+                self.program.emit_opcode(Opcode::HttpOptions);
+            }
+            
+            // File system operations
+            AstNode::Directory { path } => {
+                self.compile_node(path)?;
+                self.program.emit_opcode(Opcode::Directory);
+            }
+            
+            AstNode::PathResolve { path } => {
+                self.compile_node(path)?;
+                self.program.emit_opcode(Opcode::PathResolve);
+            }
+            
+            AstNode::DeleteFile { target } => {
+                self.compile_node(target)?;
+                self.program.emit_opcode(Opcode::DeleteFile);
+            }
+            
+            AstNode::SetPermission { target, permission } => {
+                self.compile_node(target)?;
+                self.compile_node(permission)?;
+                self.program.emit_opcode(Opcode::SetPermission);
+            }
+            
+            // Process & Environment operations
+            AstNode::EnvVar { name } => {
+                self.compile_node(name)?;
+                self.program.emit_opcode(Opcode::EnvVar);
+            }
+            
+            AstNode::ProcessCreate { command } => {
+                self.compile_node(command)?;
+                self.program.emit_opcode(Opcode::ProcessCreate);
+            }
+            
+            AstNode::ShellExec { command } => {
+                self.compile_node(command)?;
+                self.program.emit_opcode(Opcode::ShellExec);
+            }
+            
+            AstNode::MemoryAlloc { size } => {
+                self.compile_node(size)?;
+                self.program.emit_opcode(Opcode::MemoryAlloc);
+            }
+            
+            AstNode::ExitProgram { code } => {
+                self.compile_node(code)?;
+                self.program.emit_opcode(Opcode::ExitProgram);
+            }
+            
+            AstNode::SendSignal { signal, target } => {
+                self.compile_node(signal)?;
+                self.compile_node(target)?;
+                self.program.emit_opcode(Opcode::SendSignal);
+            }
+            
+            // Networking operations
+            AstNode::CreateSocket { socket_type } => {
+                self.compile_node(socket_type)?;
+                self.program.emit_opcode(Opcode::CreateSocket);
+            }
+            
+            AstNode::ListenPort { port } => {
+                self.compile_node(port)?;
+                self.program.emit_opcode(Opcode::ListenPort);
+            }
+            
+            AstNode::ConnectRemote { address } => {
+                self.compile_node(address)?;
+                self.program.emit_opcode(Opcode::ConnectRemote);
+            }
+            
+            AstNode::PortNumber { number } => {
+                self.compile_node(number)?;
+                self.program.emit_opcode(Opcode::PortNumber);
+            }
+            
+            AstNode::CreatePacket { data } => {
+                self.compile_node(data)?;
+                self.program.emit_opcode(Opcode::CreatePacket);
+            }
+            
+            AstNode::Handshake { connection } => {
+                self.compile_node(connection)?;
+                self.program.emit_opcode(Opcode::Handshake);
+            }
+            
+            // Security operations
+            AstNode::Sign { data, key } => {
+                self.compile_node(data)?;
+                self.compile_node(key)?;
+                self.program.emit_opcode(Opcode::Sign);
+            }
+            
+            AstNode::VerifySignature { signature, data, key } => {
+                self.compile_node(signature)?;
+                self.compile_node(data)?;
+                self.compile_node(key)?;
+                self.program.emit_opcode(Opcode::VerifySignature);
+            }
+            
+            // Stream & Buffer operations
+            AstNode::CreateStream { source } => {
+                self.compile_node(source)?;
+                self.program.emit_opcode(Opcode::CreateStream);
+            }
+            
+            AstNode::CreateBuffer { size } => {
+                self.compile_node(size)?;
+                self.program.emit_opcode(Opcode::CreateBuffer);
+            }
+            
+            AstNode::FlushBuffer { target } => {
+                self.compile_node(target)?;
+                self.program.emit_opcode(Opcode::FlushBuffer);
+            }
+            
+            AstNode::EndOfFile => {
+                self.program.emit_opcode(Opcode::EndOfFile);
+            }
+            
+            AstNode::SkipBytes { source, count } => {
+                self.compile_node(source)?;
+                self.compile_node(count)?;
+                self.program.emit_opcode(Opcode::SkipBytes);
+            }
+            
+            // Concurrency operations
+            AstNode::Thread { body } => {
+                self.program.emit_opcode(Opcode::Thread);
+                self.compile_node(body)?;
+            }
+            
+            AstNode::Lock { body } => {
+                self.program.emit_opcode(Opcode::Lock);
+                self.compile_node(body)?;
+            }
+            
+            AstNode::Emit { event } => {
+                self.compile_node(event)?;
+                self.program.emit_opcode(Opcode::Emit);
+            }
+            
+            AstNode::Watch { event, handler } => {
+                self.compile_node(event)?;
+                self.compile_node(handler)?;
+                self.program.emit_opcode(Opcode::Watch);
+            }
+            
+            // Data operations
+            AstNode::RegexMatch { pattern, target } => {
+                self.compile_node(pattern)?;
+                self.compile_node(target)?;
+                self.program.emit_opcode(Opcode::RegexMatch);
+            }
+            
+            AstNode::Auth { token } => {
+                self.compile_node(token)?;
+                self.program.emit_opcode(Opcode::Auth);
+            }
+            
+            AstNode::PropertyAccess { object, property } => {
+                self.compile_node(object)?;
+                let idx = self.program.add_constant(property.clone());
+                self.program.emit_opcode(Opcode::PushString);
+                self.program.emit_u32(idx);
+                self.program.emit_opcode(Opcode::PropertyAccess);
+            }
+            
+            // Math operations
+            AstNode::Infinity => {
+                self.program.emit_opcode(Opcode::Infinity);
+            }
+            
             _ => {
                 return Err(AetherError::CompilerError(format!(
                     "Unsupported AST node: {:?}",
