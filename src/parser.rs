@@ -194,8 +194,35 @@ pub enum AstNode {
         message: Box<AstNode>,
     },
     
-    /// HTTP GET (composed operation)
+    /// HTTP Request operations
     HttpGet {
+        url: Box<AstNode>,
+    },
+    
+    HttpPost {
+        url: Box<AstNode>,
+        body: Option<Box<AstNode>>,
+    },
+    
+    HttpPut {
+        url: Box<AstNode>,
+        body: Option<Box<AstNode>>,
+    },
+    
+    HttpDelete {
+        url: Box<AstNode>,
+    },
+    
+    HttpPatch {
+        url: Box<AstNode>,
+        body: Option<Box<AstNode>>,
+    },
+    
+    HttpHead {
+        url: Box<AstNode>,
+    },
+    
+    HttpOptions {
         url: Box<AstNode>,
     },
     
@@ -1025,17 +1052,95 @@ impl Parser {
                         message: Box::new(message),
                     })
                 }
+                
+                // HTTP Methods
                 TokenType::Symbol(Symbol::HttpRequest) => {
                     self.advance();
-                    // Check if next is Input symbol for composed GET operation
+                    // Check for specific HTTP method composition
                     if self.match_symbol(&Symbol::Input) {
+                        // GET request: 🌐📥
                         let url = self.parse_primary()?;
                         Ok(AstNode::HttpGet {
                             url: Box::new(url),
                         })
+                    } else if self.match_symbol(&Symbol::Output) {
+                        // POST request: 🌐📤
+                        let url = self.parse_primary()?;
+                        // Check if body is provided after pipe
+                        let body = if self.match_symbol(&Symbol::Pipe) {
+                            Some(Box::new(self.parse_primary()?))
+                        } else {
+                            None
+                        };
+                        Ok(AstNode::HttpPost { url: Box::new(url), body })
                     } else {
                         Ok(AstNode::Variable("http".to_string()))
                     }
+                }
+                
+                TokenType::Symbol(Symbol::HttpGet) => {
+                    self.advance();
+                    let url = self.parse_primary()?;
+                    Ok(AstNode::HttpGet {
+                        url: Box::new(url),
+                    })
+                }
+                
+                TokenType::Symbol(Symbol::HttpPost) => {
+                    self.advance();
+                    let url = self.parse_primary()?;
+                    let body = if self.match_symbol(&Symbol::Pipe) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
+                    Ok(AstNode::HttpPost { url: Box::new(url), body })
+                }
+                
+                TokenType::Symbol(Symbol::HttpPut) => {
+                    self.advance();
+                    let url = self.parse_primary()?;
+                    let body = if self.match_symbol(&Symbol::Pipe) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
+                    Ok(AstNode::HttpPut { url: Box::new(url), body })
+                }
+                
+                TokenType::Symbol(Symbol::HttpDelete) => {
+                    self.advance();
+                    let url = self.parse_primary()?;
+                    Ok(AstNode::HttpDelete {
+                        url: Box::new(url),
+                    })
+                }
+                
+                TokenType::Symbol(Symbol::HttpPatch) => {
+                    self.advance();
+                    let url = self.parse_primary()?;
+                    let body = if self.match_symbol(&Symbol::Pipe) {
+                        Some(Box::new(self.parse_primary()?))
+                    } else {
+                        None
+                    };
+                    Ok(AstNode::HttpPatch { url: Box::new(url), body })
+                }
+                
+                TokenType::Symbol(Symbol::HttpHead) => {
+                    self.advance();
+                    let url = self.parse_primary()?;
+                    Ok(AstNode::HttpHead {
+                        url: Box::new(url),
+                    })
+                }
+                
+                TokenType::Symbol(Symbol::HttpOptions) => {
+                    self.advance();
+                    let url = self.parse_primary()?;
+                    Ok(AstNode::HttpOptions {
+                        url: Box::new(url),
+                    })
                 }
                 
                 // Testing & Debugging (v1.2)

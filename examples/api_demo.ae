@@ -1,0 +1,14 @@
+// Practical HTTP API Usage Example
+// Fetching user data from JSONPlaceholder API
+
+// GET user data
+🌐📥 "https://jsonplaceholder.typicode.com/users/1" ▷ user ⨠ 📤 user
+
+// POST new data
+🌐📤 "https://jsonplaceholder.typicode.com/posts" ⇢ '{"title":"Aether","body":"Testing HTTP","userId":1}' ▷ newPost ⨠ 📤 newPost
+
+// PUT to update data
+🌐🔄 "https://jsonplaceholder.typicode.com/posts/1" ⇢ '{"title":"Updated","body":"Updated content","userId":1}' ▷ updatedPost ⨠ 📤 updatedPost
+
+// DELETE a resource
+🌐🗑️ "https://jsonplaceholder.typicode.com/posts/1" ▷ deleteResult ⨠ 📤 deleteResult

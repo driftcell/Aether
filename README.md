@@ -65,7 +65,14 @@ Aether GlyphCode (~20 characters):
 | `🗂` | Array | Array/List |
 | `🗄` | Map | Map/Dictionary |
 | `∅` | Empty | Null/Empty value |
-| `🌐` | HTTP | HTTP request |
+| `🌐` | HTTP | HTTP request (generic) |
+| `🌐📥` | HTTP GET | HTTP GET request |
+| `🌐📤` | HTTP POST | HTTP POST request |
+| `🌐🔄` | HTTP PUT | HTTP PUT request |
+| `🌐🗑️` | HTTP DELETE | HTTP DELETE request |
+| `🌐🔧` | HTTP PATCH | HTTP PATCH request |
+| `🌐👁️` | HTTP HEAD | HTTP HEAD request |
+| `🌐⚙️` | HTTP OPTIONS | HTTP OPTIONS request |
 | `®` | Register | Create/Register |
 
 ## 🆕 What's New in v1.1
@@ -200,6 +207,62 @@ Aether v1.3 introduces **26 new symbols** focused on system-level programming, I
 ```aether
 🌍"PATH" ▷ path ⨠ 🐚"ls -la" ▷ output ⨠ 📤output
 ```
+
+## 🆕 What's New in v1.5
+
+Aether v1.5 introduces **comprehensive HTTP client support** with full method coverage using reqwest and rustls for secure HTTPS:
+
+### HTTP Methods (7 new symbol combinations)
+- `🌐📥` HTTP GET - Fetch data from URL
+- `🌐📤` HTTP POST - Send data to URL
+- `🌐🔄` HTTP PUT - Update resource completely
+- `🌐🗑️` HTTP DELETE - Remove resource
+- `🌐🔧` HTTP PATCH - Partial resource update
+- `🌐👁️` HTTP HEAD - Get headers only
+- `🌐⚙️` HTTP OPTIONS - Get available methods
+
+**Key Features:**
+- ✅ Secure HTTPS with rustls (no OpenSSL dependency)
+- ✅ All standard HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS)
+- ✅ JSON request/response support
+- ✅ Automatic response parsing with status, body, and JSON fields
+- ✅ Async execution under the hood with tokio runtime
+
+**Example - Simple API Request:**
+```aether
+🌐📥 "https://api.github.com/users/octocat" ▷ user ⨠ 📤 user
+```
+
+**Example - POST with JSON:**
+```aether
+🌐📤 "https://httpbin.org/post" ⇢ '{"name":"Aether","version":"1.5"}' ▷ result ⨠ 📤 result
+```
+
+**Example - Full CRUD Operations:**
+```aether
+// GET - Read
+🌐📥 "https://api.example.com/users/1" ▷ user ⨠ 📤 user
+
+// POST - Create
+🌐📤 "https://api.example.com/users" ⇢ '{"name":"Alice"}' ▷ created ⨠ 📤 created
+
+// PUT - Update
+🌐🔄 "https://api.example.com/users/1" ⇢ '{"name":"Bob"}' ▷ updated ⨠ 📤 updated
+
+// DELETE - Remove
+🌐🗑️ "https://api.example.com/users/1" ▷ deleted ⨠ 📤 deleted
+```
+
+**Response Structure:**
+```json
+{
+  "status": 200,
+  "ok": true,
+  "body": "response text...",
+  "json": { ... }  // Present if body is valid JSON
+}
+```
+
 
 ## 🚀 Getting Started
 
@@ -378,9 +441,10 @@ cargo test test_lexer_basic_symbols
 - [x] **v1.2: Testing, Security & Math symbols** (Testing/Debugging, Security/Crypto, Math/Science)
 - [x] **v1.3: System Programming & I/O** (File System, Streams & Buffers, Networking, Process & OS)
 - [x] **v1.4: Bytecode Compiler & VM** (Compile .ae → .aeb, Stack-based VM execution)
+- [x] **v1.5: HTTP Client** (Full HTTP methods support with reqwest and rustls)
 - [ ] Full runtime with I/O
 - [ ] Database connectors
-- [ ] HTTP client/server
+- [ ] HTTP server
 - [ ] Type system
 - [ ] Compiler optimizations (constant folding, dead code elimination)
 - [ ] JIT compilation

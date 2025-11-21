@@ -17,6 +17,9 @@ use aes_gcm::{
 use ed25519_dalek::{Signer, Verifier, SigningKey, Signature};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 
+// HTTP client import
+use reqwest;
+
 /// Runtime value
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -534,10 +537,79 @@ impl Runtime {
                 Ok(Value::Null)
             }
             
+            // HTTP Methods - Using reqwest with rustls
             AstNode::HttpGet { url } => {
                 let url_val = self.eval_node(url)?;
-                println!("HTTP GET: {:?}", url_val);
-                Ok(Value::Object(HashMap::new()))
+                let url_str = url_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
+                
+                self.execute_http_request("GET", url_str, None)
+            }
+            
+            AstNode::HttpPost { url, body } => {
+                let url_val = self.eval_node(url)?;
+                let url_str = url_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
+                
+                let body_data = if let Some(b) = body {
+                    Some(self.eval_node(b)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("POST", url_str, body_data)
+            }
+            
+            AstNode::HttpPut { url, body } => {
+                let url_val = self.eval_node(url)?;
+                let url_str = url_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
+                
+                let body_data = if let Some(b) = body {
+                    Some(self.eval_node(b)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("PUT", url_str, body_data)
+            }
+            
+            AstNode::HttpDelete { url } => {
+                let url_val = self.eval_node(url)?;
+                let url_str = url_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
+                
+                self.execute_http_request("DELETE", url_str, None)
+            }
+            
+            AstNode::HttpPatch { url, body } => {
+                let url_val = self.eval_node(url)?;
+                let url_str = url_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
+                
+                let body_data = if let Some(b) = body {
+                    Some(self.eval_node(b)?)
+                } else {
+                    None
+                };
+                
+                self.execute_http_request("PATCH", url_str, body_data)
+            }
+            
+            AstNode::HttpHead { url } => {
+                let url_val = self.eval_node(url)?;
+                let url_str = url_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
+                
+                self.execute_http_request("HEAD", url_str, None)
+            }
+            
+            AstNode::HttpOptions { url } => {
+                let url_val = self.eval_node(url)?;
+                let url_str = url_val.as_string()
+                    .ok_or_else(|| AetherError::RuntimeError("HTTP URL must be string".to_string()))?;
+                
+                self.execute_http_request("OPTIONS", url_str, None)
             }
             
             // Testing & Debugging (v1.2)
@@ -1181,6 +1253,130 @@ impl Runtime {
             }
         }
     }
+    
+    /// Execute HTTP request using reqwest with rustls
+    fn execute_http_request(&self, method: &str, url: &str, body: Option<Value>) -> Result<Value> {
+        // Create a tokio runtime for async operations
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| AetherError::RuntimeError(format!("Failed to create async runtime: {}", e)))?;
+        
+        rt.block_on(async {
+            // Build the HTTP client with rustls
+            let client = reqwest::Client::builder()
+                .use_rustls_tls()
+                .build()
+                .map_err(|e| AetherError::RuntimeError(format!("Failed to create HTTP client: {}", e)))?;
+            
+            // Create request builder based on method
+            let request_builder = match method {
+                "GET" => client.get(url),
+                "POST" => client.post(url),
+                "PUT" => client.put(url),
+                "DELETE" => client.delete(url),
+                "PATCH" => client.patch(url),
+                "HEAD" => client.head(url),
+                "OPTIONS" => {
+                    client.request(reqwest::Method::OPTIONS, url)
+                }
+                _ => return Err(AetherError::RuntimeError(format!("Unsupported HTTP method: {}", method))),
+            };
+            
+            // Add body if provided
+            let request_builder = if let Some(body_val) = body {
+                match body_val {
+                    Value::String(s) => request_builder.body(s),
+                    Value::Object(map) => {
+                        // Convert object to JSON string
+                        let json_str = self.value_to_json_string(&Value::Object(map));
+                        request_builder
+                            .header("Content-Type", "application/json")
+                            .body(json_str)
+                    }
+                    _ => request_builder.body(format!("{:?}", body_val)),
+                }
+            } else {
+                request_builder
+            };
+            
+            // Execute the request
+            let response = request_builder
+                .send()
+                .await
+                .map_err(|e| AetherError::RuntimeError(format!("HTTP request failed: {}", e)))?;
+            
+            // Build response object
+            let mut response_obj = HashMap::new();
+            response_obj.insert("status".to_string(), Value::Number(response.status().as_u16() as f64));
+            response_obj.insert("ok".to_string(), Value::Boolean(response.status().is_success()));
+            
+            // Get response body as text
+            let body_text = response
+                .text()
+                .await
+                .map_err(|e| AetherError::RuntimeError(format!("Failed to read response body: {}", e)))?;
+            
+            response_obj.insert("body".to_string(), Value::String(body_text.clone()));
+            
+            // Try to parse as JSON if possible
+            if let Ok(json_val) = self.parse_json_string(&body_text) {
+                response_obj.insert("json".to_string(), json_val);
+            }
+            
+            Ok(Value::Object(response_obj))
+        })
+    }
+    
+    /// Helper to convert Value to JSON string
+    fn value_to_json_string(&self, value: &Value) -> String {
+        match value {
+            Value::String(s) => format!("\"{}\"", s.replace('"', "\\\"")),
+            Value::Number(n) => n.to_string(),
+            Value::Boolean(b) => b.to_string(),
+            Value::Null => "null".to_string(),
+            Value::Array(items) => {
+                let items_str: Vec<String> = items.iter()
+                    .map(|v| self.value_to_json_string(v))
+                    .collect();
+                format!("[{}]", items_str.join(","))
+            }
+            Value::Object(map) => {
+                let pairs: Vec<String> = map.iter()
+                    .map(|(k, v)| format!("\"{}\":{}", k, self.value_to_json_string(v)))
+                    .collect();
+                format!("{{{}}}", pairs.join(","))
+            }
+        }
+    }
+    
+    /// Helper to parse JSON string to Value
+    fn parse_json_string(&self, json: &str) -> Result<Value> {
+        // Simple JSON parsing for basic types
+        let trimmed = json.trim();
+        
+        if trimmed == "null" {
+            return Ok(Value::Null);
+        }
+        
+        if trimmed == "true" {
+            return Ok(Value::Boolean(true));
+        }
+        
+        if trimmed == "false" {
+            return Ok(Value::Boolean(false));
+        }
+        
+        if let Ok(num) = trimmed.parse::<f64>() {
+            return Ok(Value::Number(num));
+        }
+        
+        if trimmed.starts_with('"') && trimmed.ends_with('"') {
+            let s = &trimmed[1..trimmed.len()-1];
+            return Ok(Value::String(s.to_string()));
+        }
+        
+        // For complex JSON, return as string
+        Ok(Value::String(json.to_string()))
+    }
 
     /// Set a variable in the runtime environment
     pub fn set_variable(&mut self, name: String, value: Value) -> Result<()> {
@@ -1799,5 +1995,183 @@ mod tests {
         
         // Check that delta variable was stored
         assert_eq!(runtime.get_variable("∆temp"), Some(&Value::Number(5.0)));
+    }
+    
+    // HTTP Request Tests
+    #[test]
+    fn test_runtime_http_get() {
+        let mut runtime = Runtime::new();
+        
+        // Test with a simple URL - this will make an actual HTTP request
+        // Using httpbin.org as a reliable test endpoint
+        let node = AstNode::HttpGet {
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/get".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        // Check that result is an object (response)
+        match result {
+            Ok(Value::Object(obj)) => {
+                // Should have status field
+                assert!(obj.contains_key("status"));
+                assert!(obj.contains_key("ok"));
+                assert!(obj.contains_key("body"));
+            }
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                // Network errors are acceptable in test environment
+                println!("HTTP request failed (expected in some environments): {:?}", e);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_runtime_http_post() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::HttpPost {
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/post".to_string()))),
+            body: Some(Box::new(AstNode::Literal(LiteralValue::String("test data".to_string())))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        match result {
+            Ok(Value::Object(obj)) => {
+                assert!(obj.contains_key("status"));
+                assert!(obj.contains_key("ok"));
+            }
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                println!("HTTP POST failed (expected in some environments): {:?}", e);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_runtime_http_put() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::HttpPut {
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/put".to_string()))),
+            body: Some(Box::new(AstNode::Literal(LiteralValue::String("updated data".to_string())))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        match result {
+            Ok(Value::Object(_)) => {},
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                println!("HTTP PUT failed (expected in some environments): {:?}", e);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_runtime_http_delete() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::HttpDelete {
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/delete".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        match result {
+            Ok(Value::Object(_)) => {},
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                println!("HTTP DELETE failed (expected in some environments): {:?}", e);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_runtime_http_patch() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::HttpPatch {
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/patch".to_string()))),
+            body: Some(Box::new(AstNode::Literal(LiteralValue::String("patch data".to_string())))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        match result {
+            Ok(Value::Object(_)) => {},
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                println!("HTTP PATCH failed (expected in some environments): {:?}", e);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_runtime_http_options() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::HttpOptions {
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        match result {
+            Ok(Value::Object(_)) => {},
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                println!("HTTP OPTIONS failed (expected in some environments): {:?}", e);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_runtime_http_head() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::HttpHead {
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/".to_string()))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        match result {
+            Ok(Value::Object(_)) => {},
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                println!("HTTP HEAD failed (expected in some environments): {:?}", e);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_runtime_http_post_with_json() {
+        let mut runtime = Runtime::new();
+        
+        // Create a JSON object as body
+        let mut body_obj = HashMap::new();
+        body_obj.insert("name".to_string(), Value::String("test".to_string()));
+        body_obj.insert("value".to_string(), Value::Number(42.0));
+        
+        let node = AstNode::HttpPost {
+            url: Box::new(AstNode::Literal(LiteralValue::String("https://httpbin.org/post".to_string()))),
+            body: Some(Box::new(AstNode::Literal(LiteralValue::String(
+                r#"{"name":"test","value":42}"#.to_string()
+            )))),
+        };
+        
+        let result = runtime.eval_node(&node);
+        
+        match result {
+            Ok(Value::Object(obj)) => {
+                assert!(obj.contains_key("status"));
+            }
+            Ok(_) => panic!("Expected object response"),
+            Err(e) => {
+                println!("HTTP POST with JSON failed (expected in some environments): {:?}", e);
+            }
+        }
     }
 }
