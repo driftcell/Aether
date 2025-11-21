@@ -201,6 +201,61 @@ Aether v1.3 introduces **26 new symbols** focused on system-level programming, I
 🌍"PATH" ▷ path ⨠ 🐚"ls -la" ▷ output ⨠ 📤output
 ```
 
+## 🆕 What's New in v1.4
+
+Aether v1.4 introduces the **Aether Standard Library (ASL)** - a comprehensive documentation of standard library modules following the **"Import as Capability"** principle.
+
+### Standard Library Modules (6 core modules)
+
+The ASL provides high-leverage, composable modules imported via `🧩`:
+
+1. **🧩🧮 Math** - Mathematics & Statistics (π, e, x̄, σ, ∫, ∂, M)
+2. **🧩📝 Text** - Text & Encoding (🔡, 🔠, 📋, 6️⃣4️⃣, 🆔)
+3. **🧩⏰ Chrono** - Time & Scheduling (⏳, 🗓️, ⏰, ∆t)
+4. **🧩🗜️ Compression** - Compression & Archiving (📦, 📤, ⚖️)
+5. **🧩🧠 AI & Tensor** - Cognition & Tensors (▦, 🕸️, 🤖, 🏋️)
+6. **🧩🌐 Net+** - Advanced Networking (🔌⇄, 📧, ☁️)
+
+**Example - AI-Powered Image Service:**
+```aether
+🧩🧠 🧩🗜️ 🧩🌐 ⨠
+ƒ handle: 📥img ⨠
+  (img ⇢ 🤖"describe") ▷ desc ⨠  // AI recognition
+  img ⇢ 📦 ▷ zip ⨠               // Compress
+  zip ⇢ ☁️"s3://images" ⨠        // Upload to S3
+  📤desc                         // Return description
+```
+
+See [STANDARD_LIBRARY.md](docs/STANDARD_LIBRARY.md) for complete documentation.
+
+## 📚 Standard Library (ASL)
+
+Aether v1.4 introduces the **Aether Standard Library (ASL)** - a collection of high-leverage modules representing optimized universal capabilities. The ASL follows the **"Import as Capability"** principle using the `🧩` symbol.
+
+### Core Modules
+
+| Module | Symbol | Description | Example |
+|--------|--------|-------------|---------|
+| **Math** | `🧩🧮` | Mathematics & Statistics | `🧩🧮 ⨠ 2*π ⇢ 📤` |
+| **Text** | `🧩📝` | Text & Encoding | `🧩📝 ⨠ "abc" ⇢ 🔠` |
+| **Chrono** | `🧩⏰` | Time & Scheduling | `🧩⏰ ⨠ ⏰"0 0 * * *" ƒbackup` |
+| **Compression** | `🧩🗜️` | Compression & Archiving | `🧩🗜️ ⨠ file ⇢ 📦` |
+| **AI & Tensor** | `🧩🧠` | AI Inference & Tensors | `🧩🧠 ⨠ "text" ⇢ 🤖` |
+| **Net+** | `🧩🌐` | Advanced Networking | `🧩🌐 ⨠ 🔌⇄(url)` |
+
+### Quick Example
+
+**Data Analysis Pipeline** - Read CSV, calculate average, format output:
+```aether
+🧩🧮 🧩📝 ⨠
+📄📍"data.csv" ⇢ 🌊 ⇢ ✂"\n" ▷ rows ⨠
+rows ⇢ ∀(r): (r ⇢ ✂"," ▷ cols ⇢ cols[2]) ▷ values ⨠
+values ⇢ x̄ ▷ avg ⨠
+"Average: {}" ⇢ 📋avg ⇢ 📤
+```
+
+For complete documentation, see [Standard Library Documentation](docs/STANDARD_LIBRARY.md).
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -344,6 +399,7 @@ cargo test test_lexer_basic_symbols
 - [x] **v1.1: Extended symbol system** (Control Flow, Async, Data Manipulation, System)
 - [x] **v1.2: Testing, Security & Math symbols** (Testing/Debugging, Security/Crypto, Math/Science)
 - [x] **v1.3: System Programming & I/O** (File System, Streams & Buffers, Networking, Process & OS)
+- [x] **Standard Library (ASL)** - Design and documentation
 - [ ] Full runtime with I/O
 - [ ] Database connectors
 - [ ] HTTP client/server
@@ -352,7 +408,7 @@ cargo test test_lexer_basic_symbols
 - [ ] WASM target
 - [ ] VSCode extension
 - [ ] AI tokenizer integration
-- [ ] Standard library
+- [ ] Standard library implementation
 
 ## 🤝 Contributing
 
