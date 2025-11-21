@@ -31,6 +31,7 @@ pub mod symbols;
 pub mod bytecode;
 pub mod compiler;
 pub mod vm;
+pub mod constants;
 
 pub use error::{AetherError, Result};
 pub use lexer::{Lexer, Token, TokenType};

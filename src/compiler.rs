@@ -1,12 +1,10 @@
 //! Compiler for converting AST to bytecode
 
 use crate::bytecode::{BytecodeProgram, Opcode};
+use crate::constants::PIPE_VARIABLE;
 use crate::error::{AetherError, Result};
 use crate::parser::{AstNode, LiteralValue};
 use std::collections::HashMap;
-
-/// Special variable name used for piped values in AST
-const PIPE_VARIABLE: &str = "_pipe";
 
 /// Compiler context
 pub struct Compiler {
