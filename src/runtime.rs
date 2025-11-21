@@ -2287,6 +2287,8 @@ mod tests {
                 println!("HTTP POST with JSON failed (expected in some environments): {:?}", e);
             }
         }
+    }
+    
     #[test]
     fn test_runtime_if_else() {
         let mut runtime = Runtime::new();
@@ -2515,7 +2517,6 @@ mod tests {
         let result4 = runtime.eval_node(&node4).unwrap();
         assert_eq!(result4, Value::Boolean(true));
     }
-}
     
     #[test]
     fn test_runtime_http_with_headers() {
@@ -2551,3 +2552,4 @@ mod tests {
             }
         }
     }
+}
