@@ -28,6 +28,12 @@ pub enum AetherError {
 
     #[error("IO error: {0}")]
     IoError(String),
+
+    #[error("Bytecode error: {0}")]
+    BytecodeError(String),
+
+    #[error("Compiler error: {0}")]
+    CompilerError(String),
 }
 
 impl From<std::io::Error> for AetherError {
