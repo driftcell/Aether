@@ -13,6 +13,7 @@ pub struct Compiler {
     loop_stack: Vec<LoopContext>,
 }
 
+#[allow(dead_code)]
 struct LoopContext {
     _start_pos: usize,
     end_patches: Vec<usize>,

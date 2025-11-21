@@ -69,10 +69,24 @@ pub enum Symbol {
     Empty,
     
     // Network operations
-    /// 🌐 - HTTP request
+    /// 🌐 - HTTP request (generic)
     HttpRequest,
-    /// 🌐📥 - HTTP GET (composed)
+    /// 🏷️ - HTTP Headers
+    HttpHeaders,
+    /// 🌐📥 - HTTP GET request
     HttpGet,
+    /// 🌐📤 - HTTP POST request
+    HttpPost,
+    /// 🌐🔄 - HTTP PUT request
+    HttpPut,
+    /// 🌐🗑️ - HTTP DELETE request
+    HttpDelete,
+    /// 🌐🔧 - HTTP PATCH request
+    HttpPatch,
+    /// 🌐👁️ - HTTP HEAD request
+    HttpHead,
+    /// 🌐⚙️ - HTTP OPTIONS request
+    HttpOptions,
     /// ® - Register/create
     Register,
     
@@ -271,6 +285,7 @@ impl Symbol {
             "🗄" => Some(Symbol::Map),
             "∅" => Some(Symbol::Empty),
             "🌐" => Some(Symbol::HttpRequest),
+            "🏷️" => Some(Symbol::HttpHeaders),
             "®" => Some(Symbol::Register),
             // Control Flow & Iteration
             "↻" => Some(Symbol::Loop),
@@ -379,7 +394,14 @@ impl Symbol {
             Symbol::Map => "🗄".to_string(),
             Symbol::Empty => "∅".to_string(),
             Symbol::HttpRequest => "🌐".to_string(),
+            Symbol::HttpHeaders => "🏷️".to_string(),
             Symbol::HttpGet => "🌐📥".to_string(),
+            Symbol::HttpPost => "🌐📤".to_string(),
+            Symbol::HttpPut => "🌐🔄".to_string(),
+            Symbol::HttpDelete => "🌐🗑️".to_string(),
+            Symbol::HttpPatch => "🌐🔧".to_string(),
+            Symbol::HttpHead => "🌐👁️".to_string(),
+            Symbol::HttpOptions => "🌐⚙️".to_string(),
             Symbol::Register => "®".to_string(),
             // Control Flow & Iteration
             Symbol::Loop => "↻".to_string(),
@@ -491,8 +513,15 @@ impl Symbol {
             Symbol::Array => "Array/List",
             Symbol::Map => "Map/Dictionary",
             Symbol::Empty => "Empty/null value",
-            Symbol::HttpRequest => "HTTP request",
+            Symbol::HttpRequest => "HTTP request (generic)",
+            Symbol::HttpHeaders => "HTTP headers (key-value pairs)",
             Symbol::HttpGet => "HTTP GET request",
+            Symbol::HttpPost => "HTTP POST request",
+            Symbol::HttpPut => "HTTP PUT request",
+            Symbol::HttpDelete => "HTTP DELETE request",
+            Symbol::HttpPatch => "HTTP PATCH request",
+            Symbol::HttpHead => "HTTP HEAD request",
+            Symbol::HttpOptions => "HTTP OPTIONS request",
             Symbol::Register => "Register/create",
             // Control Flow & Iteration
             Symbol::Loop => "Loop/While (unbounded loop)",
@@ -811,6 +840,26 @@ mod tests {
         for (symbol, expected_str, expected_desc) in symbols {
             assert_eq!(symbol.to_str(), expected_str);
             assert_eq!(Symbol::from_str(expected_str), Some(symbol.clone()));
+            assert_eq!(symbol.description(), expected_desc);
+        }
+    }
+    
+    #[test]
+    fn test_http_method_symbols() {
+        let symbols = vec![
+            (Symbol::HttpRequest, "🌐", "HTTP request (generic)"),
+            (Symbol::HttpHeaders, "🏷️", "HTTP headers (key-value pairs)"),
+            (Symbol::HttpGet, "🌐📥", "HTTP GET request"),
+            (Symbol::HttpPost, "🌐📤", "HTTP POST request"),
+            (Symbol::HttpPut, "🌐🔄", "HTTP PUT request"),
+            (Symbol::HttpDelete, "🌐🗑️", "HTTP DELETE request"),
+            (Symbol::HttpPatch, "🌐🔧", "HTTP PATCH request"),
+            (Symbol::HttpHead, "🌐👁️", "HTTP HEAD request"),
+            (Symbol::HttpOptions, "🌐⚙️", "HTTP OPTIONS request"),
+        ];
+        
+        for (symbol, expected_str, expected_desc) in symbols {
+            assert_eq!(symbol.to_str(), expected_str);
             assert_eq!(symbol.description(), expected_desc);
         }
     }

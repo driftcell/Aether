@@ -23,6 +23,11 @@ aes-gcm = "0.10"
 ed25519-dalek = "2.1"
 base64 = "0.22"
 
+# HTTP client dependencies
+reqwest = { version = "0.12", features = ["rustls-tls", "json"], default-features = false }
+tokio = { version = "1.42", features = ["rt-multi-thread", "macros"] }
+serde_json = "1.0"
+
 [dev-dependencies]
 # Testing utilities
 

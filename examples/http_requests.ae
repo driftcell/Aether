@@ -1,0 +1,24 @@
+// HTTP Request Examples in Aether
+// Demonstrates all HTTP methods: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+// NOTE: These examples require internet connectivity to run successfully
+
+// Simple GET request
+🌐📥 "https://httpbin.org/get" ▷ response ⨠ 📤 response
+
+// POST request with body
+🌐📤 "https://httpbin.org/post" ⇢ "test data" ▷ result ⨠ 📤 result
+
+// PUT request with body
+🌐🔄 "https://httpbin.org/put" ⇢ "updated data" ▷ updated ⨠ 📤 updated
+
+// DELETE request
+🌐🗑️ "https://httpbin.org/delete" ▷ deleted ⨠ 📤 deleted
+
+// PATCH request with body
+🌐🔧 "https://httpbin.org/patch" ⇢ "patch data" ▷ patched ⨠ 📤 patched
+
+// HEAD request (get headers only)
+🌐👁️ "https://httpbin.org/" ▷ headers ⨠ 📤 headers
+
+// OPTIONS request (get available methods)
+🌐⚙️ "https://httpbin.org/" ▷ options ⨠ 📤 options
