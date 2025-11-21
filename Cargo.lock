@@ -45,6 +45,7 @@ dependencies = [
  "base64",
  "chrono",
  "ed25519-dalek",
+ "glob",
  "rand 0.8.5",
  "regex",
  "reqwest",
@@ -398,6 +399,12 @@ dependencies = [
  "opaque-debug",
  "polyval",
 ]
+
+[[package]]
+name = "glob"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 
 [[package]]
 name = "http"

@@ -115,8 +115,43 @@ aether compile examples/hello.ae
 # Execute bytecode
 aether exec examples/hello.aeb
 
+# Explain Aether code in human-readable format
+aether explain examples/register.ae
+
+# Explain multiple files using glob patterns
+aether explain examples/*.ae
+
 # Display help
 aether help
+```
+
+### Projectional Editing with `explain`
+
+Aether's dense symbol-based syntax can be challenging for humans to read. The `explain` command provides instant translation to human-readable pseudo-code:
+
+```bash
+# Explain a single file
+aether explain examples/register.ae
+
+# Explain multiple files
+aether explain examples/async*.ae
+
+# Explain all examples
+aether explain examples/*.ae
+```
+
+**Example transformation:**
+```aether
+Input (Aether):  ƒ®: 📥⇢J ▷ u ⁇ 🛑400 ⨠ 💾u ⨠ 📤200
+
+Output (Human):  function register:
+                   read input | parse JSON(read input) -> store in u
+                 guard (if u is null or invalid):
+                   halt with error 400
+                 then
+                 save to database: u
+                 then
+                 output 200
 ```
 
 ### Bytecode Compilation Workflow
@@ -208,22 +243,32 @@ See [docs/BYTECODE.md](docs/BYTECODE.md) for detailed bytecode format specificat
 - **Performance**: Compiles to native code
 - **Extensibility**: Easy to add new symbols
 
-## 🎨 Projectional Editing (Future)
+## 🎨 Projectional Editing
 
-The vision includes IDE support with dual views:
+Aether now supports projectional editing through the `explain` command, which provides instant translation of dense symbol-based code into human-readable format.
 
-- **Machine Layer**: High-density Aether symbols
-- **Human Layer**: Real-time rendered readable code
+**Current implementation:**
+- **Machine Layer**: High-density Aether symbols (stored in .ae files)
+- **Human Layer**: Real-time rendered readable code (via `explain` command)
+- **CLI tool**: Use `aether explain <files>` to translate any .ae file
 
 ```
 Machine:  ƒ®: 📥⇢J ▷ u ⁇ 🛑400 ⨠ 💾u ⨠ 📤200
-Human:    function register(input) {
-            let user = input.parseJSON();
-            if (!user) return error(400);
-            database.save(user);
-            return 200;
-          }
+Human:    function register:
+            read input | parse JSON(read input) -> store in u
+          guard (if u is null or invalid):
+            halt with error 400
+          then
+          save to database: u
+          then
+          output 200
 ```
+
+**Future enhancements:**
+- IDE integration with dual-pane editing
+- Bidirectional synchronization between layers
+- Customizable human-readable formats
+- Real-time inline translation
 
 ## 🧪 Testing
 

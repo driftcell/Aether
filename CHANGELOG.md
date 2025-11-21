@@ -136,6 +136,15 @@ New symbols for time control:
 - Placeholder implementations for tensor and vector search (ready for backend integration)
 
 ---
+## [Unreleased]
+
+### Added
+- **Projectional Editing**: New `aether explain` command that translates dense symbol-based Aether code into human-readable pseudo-code
+  - Supports single file or multiple files via glob patterns (e.g., `aether explain examples/*.ae`)
+  - Comprehensive AST-to-text translation for all language constructs
+  - Side-by-side display of original Aether code and human-readable explanation
+- Explainer module (`src/explainer.rs`) for AST interpretation
+- Added `glob` crate for wildcard pattern matching
 
 ## [v1.6] - Async Runtime with Tokio
 
