@@ -1,5 +1,6 @@
 //! Parser for building Abstract Syntax Trees from Aether tokens
 
+use crate::constants::PIPE_VARIABLE;
 use crate::error::{AetherError, Result};
 use crate::lexer::{Token, TokenType};
 use crate::symbols::Symbol;
@@ -1144,7 +1145,7 @@ impl Parser {
                     // For simplicity, expect base from pipe and parse exponent
                     let exponent = self.parse_primary()?;
                     // Base comes from previous context (pipe)
-                    let base = Box::new(AstNode::Variable("_pipe".to_string()));
+                    let base = Box::new(AstNode::Variable(PIPE_VARIABLE.to_string()));
                     Ok(AstNode::Power {
                         base,
                         exponent: Box::new(exponent),
@@ -1152,16 +1153,21 @@ impl Parser {
                 }
                 TokenType::Symbol(Symbol::Root) => {
                     self.advance();
-                    let value = self.parse_primary()?;
-                    Ok(AstNode::Root {
-                        value: Box::new(value),
-                    })
+                    // Check if we're in a pipe context using helper method
+                    let value = if self.is_in_pipe_context() {
+                        // In pipe context, use piped value
+                        Box::new(AstNode::Variable(PIPE_VARIABLE.to_string()))
+                    } else {
+                        // Parse explicit value
+                        Box::new(self.parse_primary()?)
+                    };
+                    Ok(AstNode::Root { value })
                 }
                 TokenType::Symbol(Symbol::Approx) => {
                     self.advance();
                     // Parse as infix: left ≈ right
                     let right = self.parse_primary()?;
-                    let left = Box::new(AstNode::Variable("_pipe".to_string()));
+                    let left = Box::new(AstNode::Variable(PIPE_VARIABLE.to_string()));
                     Ok(AstNode::Approx {
                         left,
                         right: Box::new(right),
@@ -1431,6 +1437,20 @@ impl Parser {
             }
         }
         false
+    }
+    
+    /// Check if we are in a pipe context (next token suggests piped value will be used)
+    fn is_in_pipe_context(&self) -> bool {
+        if let Some(token) = self.peek() {
+            matches!(
+                &token.token_type,
+                TokenType::Symbol(Symbol::PipeInto) |
+                TokenType::Symbol(Symbol::Sequence) |
+                TokenType::Eof
+            )
+        } else {
+            true // No token following means we're at end, likely in pipe context
+        }
     }
 }
 

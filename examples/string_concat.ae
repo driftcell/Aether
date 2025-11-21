@@ -1,0 +1,2 @@
+// Test array split and join
+"apple,banana,cherry" ⇢ ✂"," ⇢ 🔗" | " ▷ result ⨠ 📤result

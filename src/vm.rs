@@ -718,4 +718,109 @@ mod tests {
         
         assert_eq!(result, Value::String("Hello, VM!".to_string()));
     }
+    
+    #[test]
+    fn test_vm_power() {
+        let mut program = BytecodeProgram::new();
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(2.0);
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(3.0);
+        program.emit_opcode(Opcode::Power);
+        program.emit_opcode(Opcode::End);
+        
+        let mut vm = VM::new(program);
+        let result = vm.execute().unwrap();
+        
+        assert_eq!(result, Value::Number(8.0));
+    }
+    
+    #[test]
+    fn test_vm_root() {
+        let mut program = BytecodeProgram::new();
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(16.0);
+        program.emit_opcode(Opcode::Root);
+        program.emit_opcode(Opcode::End);
+        
+        let mut vm = VM::new(program);
+        let result = vm.execute().unwrap();
+        
+        assert_eq!(result, Value::Number(4.0));
+    }
+    
+    #[test]
+    fn test_vm_split() {
+        let mut program = BytecodeProgram::new();
+        let str_idx = program.add_constant("a,b,c".to_string());
+        let delim_idx = program.add_constant(",".to_string());
+        
+        program.emit_opcode(Opcode::PushString);
+        program.emit_u32(str_idx);
+        program.emit_opcode(Opcode::PushString);
+        program.emit_u32(delim_idx);
+        program.emit_opcode(Opcode::Split);
+        program.emit_opcode(Opcode::End);
+        
+        let mut vm = VM::new(program);
+        let result = vm.execute().unwrap();
+        
+        match result {
+            Value::Array(items) => {
+                assert_eq!(items.len(), 3);
+                assert_eq!(items[0], Value::String("a".to_string()));
+                assert_eq!(items[1], Value::String("b".to_string()));
+                assert_eq!(items[2], Value::String("c".to_string()));
+            }
+            _ => panic!("Expected array result"),
+        }
+    }
+    
+    #[test]
+    fn test_vm_equal() {
+        let mut program = BytecodeProgram::new();
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(5.0);
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(5.0);
+        program.emit_opcode(Opcode::Equal);
+        program.emit_opcode(Opcode::End);
+        
+        let mut vm = VM::new(program);
+        let result = vm.execute().unwrap();
+        
+        assert_eq!(result, Value::Boolean(true));
+    }
+    
+    #[test]
+    fn test_vm_not_equal() {
+        let mut program = BytecodeProgram::new();
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(5.0);
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(3.0);
+        program.emit_opcode(Opcode::NotEqual);
+        program.emit_opcode(Opcode::End);
+        
+        let mut vm = VM::new(program);
+        let result = vm.execute().unwrap();
+        
+        assert_eq!(result, Value::Boolean(true));
+    }
+    
+    #[test]
+    fn test_vm_comparison() {
+        let mut program = BytecodeProgram::new();
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(10.0);
+        program.emit_opcode(Opcode::PushNumber);
+        program.emit_f64(5.0);
+        program.emit_opcode(Opcode::GreaterThan);
+        program.emit_opcode(Opcode::End);
+        
+        let mut vm = VM::new(program);
+        let result = vm.execute().unwrap();
+        
+        assert_eq!(result, Value::Boolean(true));
+    }
 }

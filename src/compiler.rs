@@ -1,6 +1,7 @@
 //! Compiler for converting AST to bytecode
 
 use crate::bytecode::{BytecodeProgram, Opcode};
+use crate::constants::PIPE_VARIABLE;
 use crate::error::{AetherError, Result};
 use crate::parser::{AstNode, LiteralValue};
 use std::collections::HashMap;
@@ -45,9 +46,16 @@ impl Compiler {
             AstNode::Literal(lit) => self.compile_literal(lit)?,
             
             AstNode::Variable(name) => {
-                let idx = self.program.add_constant(name.clone());
-                self.program.emit_opcode(Opcode::LoadVar);
-                self.program.emit_u32(idx);
+                // Special handling for _pipe variable used in pipe operations
+                // In bytecode, the piped value is already on the stack
+                if name == PIPE_VARIABLE {
+                    // Don't emit LoadVar - value is already on stack from Pipe source
+                    // No-op: the value is already where it needs to be
+                } else {
+                    let idx = self.program.add_constant(name.clone());
+                    self.program.emit_opcode(Opcode::LoadVar);
+                    self.program.emit_u32(idx);
+                }
             }
             
             AstNode::Input => {
@@ -295,17 +303,32 @@ impl Compiler {
             }
             
             AstNode::Split { target, delimiter } => {
-                self.compile_node(target)?;
+                // If target is Empty, it means we're using the piped value (already on stack)
+                // Otherwise, compile the target normally
+                if !matches!(target.as_ref(), AstNode::Empty) {
+                    self.compile_node(target)?;
+                }
+                // If delimiter is provided, compile it; otherwise use default (space)
                 if let Some(delim) = delimiter {
                     self.compile_node(delim)?;
+                } else {
+                    // Push default delimiter (space, matching runtime behavior)
+                    self.compile_literal(&LiteralValue::String(" ".to_string()))?;
                 }
                 self.program.emit_opcode(Opcode::Split);
             }
             
             AstNode::Join { elements, separator } => {
-                self.compile_node(elements)?;
+                // If elements is Empty, it means we're using the piped value (already on stack)
+                if !matches!(elements.as_ref(), AstNode::Empty) {
+                    self.compile_node(elements)?;
+                }
+                // If separator is provided, compile it; otherwise use default (empty string)
                 if let Some(sep) = separator {
                     self.compile_node(sep)?;
+                } else {
+                    // Push default separator (empty string, matching runtime behavior)
+                    self.compile_literal(&LiteralValue::String("".to_string()))?;
                 }
                 self.program.emit_opcode(Opcode::Join);
             }
@@ -507,5 +530,66 @@ mod tests {
         
         assert_eq!(compiler.program.code[0], Opcode::LoadVar.to_byte());
         assert_eq!(compiler.program.constants[0], "test");
+    }
+    
+    #[test]
+    fn test_compile_power() {
+        let source = "2 ⇢ ↑3".to_string();
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let program = compiler.compile(ast).unwrap();
+        
+        // Should compile to: PushNumber 2, PushNumber 3, Power
+        assert!(!program.code.is_empty());
+    }
+    
+    #[test]
+    fn test_compile_root() {
+        let source = "16 ⇢ √".to_string();
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let program = compiler.compile(ast).unwrap();
+        
+        // Should compile without error
+        assert!(!program.code.is_empty());
+    }
+    
+    #[test]
+    fn test_compile_split() {
+        let source = "\"a,b,c\" ⇢ ✂\",\"".to_string();
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let program = compiler.compile(ast).unwrap();
+        
+        // Should have two constants: the string and delimiter
+        assert_eq!(program.constants.len(), 2);
+        assert!(!program.code.is_empty());
+    }
+    
+    #[test]
+    fn test_compile_pipe_into() {
+        let source = "\"test\" ▷ x".to_string();
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let program = compiler.compile(ast).unwrap();
+        
+        // Should have variable name in constants
+        assert!(program.constants.contains(&"x".to_string()));
     }
 }

@@ -1,0 +1,16 @@
+// Comprehensive integration test
+// Tests multiple operations chained together
+
+// Test 1: Math operations
+2 ⇢ ↑3 ▷ power_result ⨠ 
+
+// Test 2: String manipulation  
+"hello,world,test" ⇢ ✂"," ⇢ 🔗" | " ▷ string_result ⨠
+
+// Test 3: Comparison and equality
+10 > 5 ▷ gt_result ⨠
+5 ≡ 5 ▷ eq_result ⨠
+5 ≠ 3 ▷ neq_result ⨠
+
+// Output final result
+📤 "Integration test completed"
