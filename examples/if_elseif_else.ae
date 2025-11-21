@@ -1,0 +1,2 @@
+// If-elseif-else example
+7 ▷ score ⨠ ◇(score > 8): 📤"Excellent" ◈(score > 5): 📤"Good" ◆: 📤"Needs Improvement"
