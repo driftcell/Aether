@@ -307,11 +307,11 @@ impl Compiler {
                 if !matches!(target.as_ref(), AstNode::Empty) {
                     self.compile_node(target)?;
                 }
-                // If delimiter is provided, compile it; otherwise the opcode will use default
+                // If delimiter is provided, compile it; otherwise use default (space)
                 if let Some(delim) = delimiter {
                     self.compile_node(delim)?;
                 } else {
-                    // Push default delimiter (empty string or space)
+                    // Push default delimiter (space, matching runtime behavior)
                     self.compile_literal(&LiteralValue::String(" ".to_string()))?;
                 }
                 self.program.emit_opcode(Opcode::Split);
@@ -322,11 +322,11 @@ impl Compiler {
                 if !matches!(elements.as_ref(), AstNode::Empty) {
                     self.compile_node(elements)?;
                 }
-                // If separator is provided, compile it; otherwise use default
+                // If separator is provided, compile it; otherwise use default (empty string)
                 if let Some(sep) = separator {
                     self.compile_node(sep)?;
                 } else {
-                    // Push default separator (empty string)
+                    // Push default separator (empty string, matching runtime behavior)
                     self.compile_literal(&LiteralValue::String("".to_string()))?;
                 }
                 self.program.emit_opcode(Opcode::Join);
