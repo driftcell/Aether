@@ -21,7 +21,22 @@ Complete reference for all symbols in the Aether programming language.
 15. [Streams & Buffers (v1.3)](#streams--buffers-v13)
 16. [Networking (v1.3)](#networking-v13)
 17. [Process & OS (v1.3)](#process--os-v13)
-18. [Complete Examples](#complete-example)
+18. [Standard Library (v1.4)](#standard-library-v14)
+19. [Complete Examples](#complete-example)
+
+## Standard Library (v1.4)
+
+For standard library modules and their specialized operators, see the comprehensive [Standard Library Documentation](STANDARD_LIBRARY.md).
+
+Quick reference of standard library modules:
+- **🧩🧮** Math - Mathematics & Statistics (π, e, x̄, σ, ∫, ∂, M)
+- **🧩📝** Text - Text & Encoding (🔡, 🔠, 📋, 6️⃣4️⃣, 🆔)
+- **🧩⏰** Chrono - Time & Scheduling (⏳, 🗓️, ⏰, ∆t)
+- **🧩🗜️** Compression - Compression & Archiving (📦, 📤, ⚖️)
+- **🧩🧠** AI & Tensor - Cognition & Tensors (▦, 🕸️, 🤖, 🏋️)
+- **🧩🌐** Net+ - Advanced Networking (🔌⇄, 📧, ☁️)
+
+---
 
 ## Function & Control Flow
 
