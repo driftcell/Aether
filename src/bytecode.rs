@@ -180,6 +180,98 @@ pub enum Opcode {
     FileWrite,
     /// Append to file
     FileAppend,
+    /// Directory operations
+    Directory,
+    /// Path resolution
+    PathResolve,
+    /// Delete file
+    DeleteFile,
+    /// Set permissions
+    SetPermission,
+    
+    // HTTP operations
+    /// HTTP GET request (url on stack, optional headers)
+    HttpGet,
+    /// HTTP POST request (url, body, optional headers on stack)
+    HttpPost,
+    /// HTTP PUT request (url, body, optional headers on stack)
+    HttpPut,
+    /// HTTP DELETE request (url, optional headers on stack)
+    HttpDelete,
+    /// HTTP PATCH request (url, body, optional headers on stack)
+    HttpPatch,
+    /// HTTP HEAD request (url, optional headers on stack)
+    HttpHead,
+    /// HTTP OPTIONS request (url, optional headers on stack)
+    HttpOptions,
+    
+    // Process & Environment operations
+    /// Get environment variable
+    EnvVar,
+    /// Create process
+    ProcessCreate,
+    /// Execute shell command
+    ShellExec,
+    /// Allocate memory
+    MemoryAlloc,
+    /// Exit program
+    ExitProgram,
+    /// Send signal
+    SendSignal,
+    
+    // Networking operations
+    /// Create socket
+    CreateSocket,
+    /// Listen on port
+    ListenPort,
+    /// Connect to remote
+    ConnectRemote,
+    /// Port number
+    PortNumber,
+    /// Create packet
+    CreatePacket,
+    /// Handshake
+    Handshake,
+    
+    // Security operations
+    /// Sign data
+    Sign,
+    /// Verify signature
+    VerifySignature,
+    
+    // Stream & Buffer operations
+    /// Create stream
+    CreateStream,
+    /// Create buffer
+    CreateBuffer,
+    /// Flush buffer
+    FlushBuffer,
+    /// End of file marker
+    EndOfFile,
+    /// Skip bytes
+    SkipBytes,
+    
+    // Concurrency operations
+    /// Create thread
+    Thread,
+    /// Lock/Mutex
+    Lock,
+    /// Emit event
+    Emit,
+    /// Watch/Listen event
+    Watch,
+    
+    // Data operations
+    /// Regex match
+    RegexMatch,
+    /// Authentication token
+    Auth,
+    /// Property access
+    PropertyAccess,
+    
+    // Math operations
+    /// Infinity value
+    Infinity,
     
     // End of program
     End,
@@ -271,6 +363,60 @@ impl Opcode {
             Opcode::FileRead => 0xF1,
             Opcode::FileWrite => 0xF2,
             Opcode::FileAppend => 0xF3,
+            Opcode::Directory => 0xF4,
+            Opcode::PathResolve => 0xF5,
+            Opcode::DeleteFile => 0xF6,
+            Opcode::SetPermission => 0xF7,
+            
+            // HTTP operations - using 0x5x range (after Input/Output)
+            Opcode::HttpGet => 0x52,
+            Opcode::HttpPost => 0x53,
+            Opcode::HttpPut => 0x54,
+            Opcode::HttpDelete => 0x55,
+            Opcode::HttpPatch => 0x56,
+            Opcode::HttpHead => 0x57,
+            Opcode::HttpOptions => 0x58,
+            
+            // Process & Environment operations - using 0xDx range (after Debug)
+            Opcode::EnvVar => 0xD3,
+            Opcode::ProcessCreate => 0xD4,
+            Opcode::ShellExec => 0xD5,
+            Opcode::MemoryAlloc => 0xD6,
+            Opcode::ExitProgram => 0xD7,
+            Opcode::SendSignal => 0xD8,
+            
+            // Networking operations - using 0x6x range (after Query)
+            Opcode::CreateSocket => 0x63,
+            Opcode::ListenPort => 0x64,
+            Opcode::ConnectRemote => 0x65,
+            Opcode::PortNumber => 0x66,
+            Opcode::CreatePacket => 0x67,
+            Opcode::Handshake => 0x68,
+            
+            // Security operations - using 0xAx range (after Retry)
+            Opcode::Sign => 0xAC,
+            Opcode::VerifySignature => 0xAD,
+            
+            // Stream & Buffer operations - using 0x8x range (after MakeObject)
+            Opcode::CreateStream => 0x82,
+            Opcode::CreateBuffer => 0x83,
+            Opcode::FlushBuffer => 0x84,
+            Opcode::EndOfFile => 0x85,
+            Opcode::SkipBytes => 0x86,
+            
+            // Concurrency operations - using 0xBx range (after Await)
+            Opcode::Thread => 0xB2,
+            Opcode::Lock => 0xB3,
+            Opcode::Emit => 0xB4,
+            Opcode::Watch => 0xB5,
+            
+            // Data operations - using 0x6x and 0x3x ranges
+            Opcode::RegexMatch => 0x69,
+            Opcode::Auth => 0x6A,
+            Opcode::PropertyAccess => 0x35,
+            
+            // Math operations - using 0x2x range (after Root)
+            Opcode::Infinity => 0x26,
             
             Opcode::End => 0xFF,
         }
@@ -361,6 +507,60 @@ impl Opcode {
             0xF1 => Ok(Opcode::FileRead),
             0xF2 => Ok(Opcode::FileWrite),
             0xF3 => Ok(Opcode::FileAppend),
+            0xF4 => Ok(Opcode::Directory),
+            0xF5 => Ok(Opcode::PathResolve),
+            0xF6 => Ok(Opcode::DeleteFile),
+            0xF7 => Ok(Opcode::SetPermission),
+            
+            // HTTP operations
+            0x52 => Ok(Opcode::HttpGet),
+            0x53 => Ok(Opcode::HttpPost),
+            0x54 => Ok(Opcode::HttpPut),
+            0x55 => Ok(Opcode::HttpDelete),
+            0x56 => Ok(Opcode::HttpPatch),
+            0x57 => Ok(Opcode::HttpHead),
+            0x58 => Ok(Opcode::HttpOptions),
+            
+            // Process & Environment operations
+            0xD3 => Ok(Opcode::EnvVar),
+            0xD4 => Ok(Opcode::ProcessCreate),
+            0xD5 => Ok(Opcode::ShellExec),
+            0xD6 => Ok(Opcode::MemoryAlloc),
+            0xD7 => Ok(Opcode::ExitProgram),
+            0xD8 => Ok(Opcode::SendSignal),
+            
+            // Networking operations
+            0x63 => Ok(Opcode::CreateSocket),
+            0x64 => Ok(Opcode::ListenPort),
+            0x65 => Ok(Opcode::ConnectRemote),
+            0x66 => Ok(Opcode::PortNumber),
+            0x67 => Ok(Opcode::CreatePacket),
+            0x68 => Ok(Opcode::Handshake),
+            
+            // Security operations
+            0xAC => Ok(Opcode::Sign),
+            0xAD => Ok(Opcode::VerifySignature),
+            
+            // Stream & Buffer operations
+            0x82 => Ok(Opcode::CreateStream),
+            0x83 => Ok(Opcode::CreateBuffer),
+            0x84 => Ok(Opcode::FlushBuffer),
+            0x85 => Ok(Opcode::EndOfFile),
+            0x86 => Ok(Opcode::SkipBytes),
+            
+            // Concurrency operations
+            0xB2 => Ok(Opcode::Thread),
+            0xB3 => Ok(Opcode::Lock),
+            0xB4 => Ok(Opcode::Emit),
+            0xB5 => Ok(Opcode::Watch),
+            
+            // Data operations
+            0x69 => Ok(Opcode::RegexMatch),
+            0x6A => Ok(Opcode::Auth),
+            0x35 => Ok(Opcode::PropertyAccess),
+            
+            // Math operations
+            0x26 => Ok(Opcode::Infinity),
             
             0xFF => Ok(Opcode::End),
             

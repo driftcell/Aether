@@ -587,6 +587,323 @@ impl VM {
                     println!("[FILE APPEND] {:?}", content);
                 }
                 
+                // File system operations (extended)
+                Opcode::Directory => {
+                    let _path = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Directory operations - not fully implemented
+                    self.stack.push(Value::String("[DIRECTORY]".to_string()));
+                }
+                
+                Opcode::PathResolve => {
+                    let path = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Path resolution - simplified
+                    if let Value::String(p) = path {
+                        // For now, just return the path as-is
+                        self.stack.push(Value::String(p));
+                    } else {
+                        self.stack.push(Value::Null);
+                    }
+                }
+                
+                Opcode::DeleteFile => {
+                    let _target = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Delete file - not fully implemented
+                    println!("[FILE DELETE]");
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                Opcode::SetPermission => {
+                    let _permission = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _target = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Set permission - not fully implemented
+                    println!("[SET PERMISSION]");
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                // HTTP operations
+                Opcode::HttpGet => {
+                    let _headers = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _url = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // HTTP GET - not implemented in bytecode yet (runtime only)
+                    self.stack.push(Value::String("[HTTP GET RESPONSE]".to_string()));
+                }
+                
+                Opcode::HttpPost => {
+                    let _headers = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _body = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _url = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // HTTP POST - not implemented in bytecode yet (runtime only)
+                    self.stack.push(Value::String("[HTTP POST RESPONSE]".to_string()));
+                }
+                
+                Opcode::HttpPut => {
+                    let _headers = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _body = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _url = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // HTTP PUT - not implemented in bytecode yet (runtime only)
+                    self.stack.push(Value::String("[HTTP PUT RESPONSE]".to_string()));
+                }
+                
+                Opcode::HttpDelete => {
+                    let _headers = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _url = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // HTTP DELETE - not implemented in bytecode yet (runtime only)
+                    self.stack.push(Value::String("[HTTP DELETE RESPONSE]".to_string()));
+                }
+                
+                Opcode::HttpPatch => {
+                    let _headers = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _body = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _url = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // HTTP PATCH - not implemented in bytecode yet (runtime only)
+                    self.stack.push(Value::String("[HTTP PATCH RESPONSE]".to_string()));
+                }
+                
+                Opcode::HttpHead => {
+                    let _headers = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _url = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // HTTP HEAD - not implemented in bytecode yet (runtime only)
+                    self.stack.push(Value::String("[HTTP HEAD RESPONSE]".to_string()));
+                }
+                
+                Opcode::HttpOptions => {
+                    let _headers = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _url = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // HTTP OPTIONS - not implemented in bytecode yet (runtime only)
+                    self.stack.push(Value::String("[HTTP OPTIONS RESPONSE]".to_string()));
+                }
+                
+                // Process & Environment operations
+                Opcode::EnvVar => {
+                    let name = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    if let Value::String(var_name) = name {
+                        match std::env::var(&var_name) {
+                            Ok(value) => self.stack.push(Value::String(value)),
+                            Err(_) => self.stack.push(Value::Null),
+                        }
+                    } else {
+                        self.stack.push(Value::Null);
+                    }
+                }
+                
+                Opcode::ProcessCreate => {
+                    let _command = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Process create - not fully implemented
+                    self.stack.push(Value::String("[PROCESS]".to_string()));
+                }
+                
+                Opcode::ShellExec => {
+                    let _command = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Shell exec - not fully implemented
+                    self.stack.push(Value::String("[SHELL OUTPUT]".to_string()));
+                }
+                
+                Opcode::MemoryAlloc => {
+                    let _size = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Memory alloc - not fully implemented
+                    self.stack.push(Value::String("[MEMORY]".to_string()));
+                }
+                
+                Opcode::ExitProgram => {
+                    let _code = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Exit program - for now just break
+                    break;
+                }
+                
+                Opcode::SendSignal => {
+                    let _target = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _signal = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Send signal - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                // Networking operations
+                Opcode::CreateSocket => {
+                    let _socket_type = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Create socket - not fully implemented
+                    self.stack.push(Value::String("[SOCKET]".to_string()));
+                }
+                
+                Opcode::ListenPort => {
+                    let _port = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Listen port - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                Opcode::ConnectRemote => {
+                    let _address = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Connect remote - not fully implemented
+                    self.stack.push(Value::String("[CONNECTION]".to_string()));
+                }
+                
+                Opcode::PortNumber => {
+                    let _number = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Port number - not fully implemented
+                    self.stack.push(Value::String("[PORT]".to_string()));
+                }
+                
+                Opcode::CreatePacket => {
+                    let _data = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Create packet - not fully implemented
+                    self.stack.push(Value::String("[PACKET]".to_string()));
+                }
+                
+                Opcode::Handshake => {
+                    let _connection = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Handshake - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                // Security operations
+                Opcode::Sign => {
+                    let _key = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _data = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Sign - not fully implemented
+                    self.stack.push(Value::String("[SIGNATURE]".to_string()));
+                }
+                
+                Opcode::VerifySignature => {
+                    let _key = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _data = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _signature = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Verify signature - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                // Stream & Buffer operations
+                Opcode::CreateStream => {
+                    let _source = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Create stream - not fully implemented
+                    self.stack.push(Value::String("[STREAM]".to_string()));
+                }
+                
+                Opcode::CreateBuffer => {
+                    let _size = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Create buffer - not fully implemented
+                    self.stack.push(Value::String("[BUFFER]".to_string()));
+                }
+                
+                Opcode::FlushBuffer => {
+                    let _target = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Flush buffer - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                Opcode::EndOfFile => {
+                    // End of file marker
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                Opcode::SkipBytes => {
+                    let _count = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _source = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Skip bytes - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                // Concurrency operations
+                Opcode::Thread => {
+                    // Thread - not fully implemented
+                    self.stack.push(Value::String("[THREAD]".to_string()));
+                }
+                
+                Opcode::Lock => {
+                    // Lock - not fully implemented
+                    self.stack.push(Value::String("[LOCK]".to_string()));
+                }
+                
+                Opcode::Emit => {
+                    let _event = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Emit event - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                Opcode::Watch => {
+                    let _handler = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _event = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Watch event - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                // Data operations
+                Opcode::RegexMatch => {
+                    let _target = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _pattern = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Regex match - not fully implemented
+                    self.stack.push(Value::Boolean(false));
+                }
+                
+                Opcode::Auth => {
+                    let _token = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Auth - not fully implemented
+                    self.stack.push(Value::Boolean(true));
+                }
+                
+                Opcode::PropertyAccess => {
+                    let _property = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    let _object = self.stack.pop()
+                        .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;
+                    // Property access - not fully implemented
+                    self.stack.push(Value::Null);
+                }
+                
+                // Math operations
+                Opcode::Infinity => {
+                    self.stack.push(Value::Number(f64::INFINITY));
+                }
+                
                 Opcode::End => {
                     break;
                 }
