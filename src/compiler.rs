@@ -15,7 +15,7 @@ pub struct Compiler {
 
 #[allow(dead_code)]
 struct LoopContext {
-    start_pos: usize,
+    _start_pos: usize,
     end_patches: Vec<usize>,
 }
 
@@ -155,7 +155,7 @@ impl Compiler {
                 self.program.emit_u32(0); // Placeholder for end position
                 
                 self.loop_stack.push(LoopContext {
-                    start_pos,
+                    _start_pos: start_pos,
                     end_patches: vec![end_patch_pos],
                 });
                 
@@ -284,6 +284,23 @@ impl Compiler {
                 self.compile_node(left)?;
                 self.compile_node(right)?;
                 self.program.emit_opcode(Opcode::NotEqual);
+            }
+            
+            AstNode::And { left, right } => {
+                self.compile_node(left)?;
+                self.compile_node(right)?;
+                self.program.emit_opcode(Opcode::And);
+            }
+            
+            AstNode::Or { left, right } => {
+                self.compile_node(left)?;
+                self.compile_node(right)?;
+                self.program.emit_opcode(Opcode::Or);
+            }
+            
+            AstNode::Not { operand } => {
+                self.compile_node(operand)?;
+                self.program.emit_opcode(Opcode::Not);
             }
             
             AstNode::Approx { left, right } => {

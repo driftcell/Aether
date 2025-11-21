@@ -1,0 +1,11 @@
+// Comprehensive conditional logic example
+// This example demonstrates if-elseif-else with And, Or, Not operations
+
+// Test various age groups with verification status
+30 ▷ age ⨠ 1 ▷ verified ⨠
+◇((age > 64) ⊗ verified): 📤"Senior (verified)"
+◈(age > 64): 📤"Senior (unverified)"
+◈((age > 17) ⊗ verified): 📤"Adult (verified)"
+◈(age > 17): 📤"Adult (unverified)"
+◈(age > 12): 📤"Teen"
+◆: 📤"Child"

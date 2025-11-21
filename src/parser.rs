@@ -166,6 +166,23 @@ pub enum AstNode {
         right: Box<AstNode>,
     },
     
+    /// Logical And
+    And {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
+    /// Logical Or
+    Or {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
+    /// Logical Not
+    Not {
+        operand: Box<AstNode>,
+    },
+    
     /// Immutable/Const
     Immutable {
         name: String,
@@ -628,6 +645,22 @@ impl Parser {
                         right: Box::new(right),
                     };
                 }
+                TokenType::Symbol(Symbol::And) => {
+                    self.advance();
+                    let right = self.parse_primary()?;
+                    expr = AstNode::And {
+                        left: Box::new(expr),
+                        right: Box::new(right),
+                    };
+                }
+                TokenType::Symbol(Symbol::Or) => {
+                    self.advance();
+                    let right = self.parse_primary()?;
+                    expr = AstNode::Or {
+                        left: Box::new(expr),
+                        right: Box::new(right),
+                    };
+                }
                 _ => {}
             }
         }
@@ -707,6 +740,13 @@ impl Parser {
                     let error_code = self.parse_primary()?;
                     Ok(AstNode::Halt(Box::new(error_code)))
                 }
+                TokenType::Symbol(Symbol::Not) => {
+                    self.advance();
+                    let operand = self.parse_primary()?;
+                    Ok(AstNode::Not {
+                        operand: Box::new(operand),
+                    })
+                }
                 TokenType::Symbol(Symbol::Persist) => {
                     self.advance();
                     let value = if !self.is_at_end() && !self.check_symbol(&Symbol::Sequence) {
@@ -769,11 +809,14 @@ impl Parser {
                     }
                     // Parse then branch (could be parenthesized)
                     let then_branch = self.parse_primary()?;
-                    // TODO: handle else branch in the future
+                    
+                    // Check for elseif or else
+                    let else_branch = self.parse_else_branch()?;
+                    
                     Ok(AstNode::IfThen {
                         condition: Box::new(condition),
                         then_branch: Box::new(then_branch),
-                        else_branch: None,
+                        else_branch,
                     })
                 }
                 // Control Flow & Iteration
@@ -1614,6 +1657,61 @@ impl Parser {
             true // No token following means we're at end, likely in pipe context
         }
     }
+    
+    /// Parse else/elseif branches after an if statement
+    fn parse_else_branch(&mut self) -> Result<Option<Box<AstNode>>> {
+        // Check for elseif
+        if self.check_symbol(&Symbol::ElseIf) {
+            self.advance(); // consume ◈
+            
+            // Expect opening parenthesis for condition
+            if !self.match_token_type(&TokenType::LeftParen) {
+                return Err(AetherError::ParserError(
+                    "Expected '(' after ◈".to_string(),
+                ));
+            }
+            let condition = self.parse_expression()?;
+            if !self.match_token_type(&TokenType::RightParen) {
+                return Err(AetherError::ParserError(
+                    "Expected ')' after elseif condition".to_string(),
+                ));
+            }
+            // Expect colon
+            if !self.match_token_type(&TokenType::Colon) {
+                return Err(AetherError::ParserError(
+                    "Expected ':' after elseif condition".to_string(),
+                ));
+            }
+            // Parse then branch
+            let then_branch = self.parse_primary()?;
+            
+            // Recursively check for more elseif or else
+            let else_branch = self.parse_else_branch()?;
+            
+            Ok(Some(Box::new(AstNode::IfThen {
+                condition: Box::new(condition),
+                then_branch: Box::new(then_branch),
+                else_branch,
+            })))
+        }
+        // Check for else
+        else if self.check_symbol(&Symbol::Else) {
+            self.advance(); // consume ◆
+            
+            // Expect colon
+            if !self.match_token_type(&TokenType::Colon) {
+                return Err(AetherError::ParserError(
+                    "Expected ':' after ◆".to_string(),
+                ));
+            }
+            // Parse else branch
+            let else_node = self.parse_primary()?;
+            Ok(Some(Box::new(else_node)))
+        }
+        else {
+            Ok(None)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -1911,6 +2009,89 @@ mod tests {
         match &ast[0] {
             AstNode::Infinity => {},
             _ => panic!("Expected Infinity node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_if_else() {
+        let mut lexer = Lexer::new("◇(x > 5): 📤\"big\" ◆: 📤\"small\"".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::IfThen { condition: _, then_branch: _, else_branch } => {
+                assert!(else_branch.is_some(), "Expected else branch");
+            },
+            _ => panic!("Expected IfThen node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_if_elseif_else() {
+        let mut lexer = Lexer::new("◇(x > 10): 📤\"large\" ◈(x > 5): 📤\"medium\" ◆: 📤\"small\"".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::IfThen { condition: _, then_branch: _, else_branch } => {
+                assert!(else_branch.is_some(), "Expected else branch");
+                // Check that else branch contains another IfThen (elseif)
+                if let Some(else_node) = else_branch {
+                    match &**else_node {
+                        AstNode::IfThen { else_branch: inner_else, .. } => {
+                            assert!(inner_else.is_some(), "Expected final else");
+                        },
+                        _ => panic!("Expected nested IfThen for elseif"),
+                    }
+                }
+            },
+            _ => panic!("Expected IfThen node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_and() {
+        let mut lexer = Lexer::new("(x > 5) ⊗ (y < 10)".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::And { .. } => {},
+            _ => panic!("Expected And node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_or() {
+        let mut lexer = Lexer::new("(x < 5) ⊕ (x > 15)".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Or { .. } => {},
+            _ => panic!("Expected Or node"),
+        }
+    }
+    
+    #[test]
+    fn test_parse_not() {
+        let mut lexer = Lexer::new("¬ flag".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        
+        assert_eq!(ast.len(), 1);
+        match &ast[0] {
+            AstNode::Not { .. } => {},
+            _ => panic!("Expected Not node"),
         }
     }
 }

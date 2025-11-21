@@ -280,11 +280,56 @@ Validate user exists
 
 **Symbol**: `◇` (White Diamond)  
 **Unicode**: U+25C7  
-**Purpose**: Conditional branching
+**Purpose**: Conditional branching (if statement)
 
 **Syntax**:
 ```aether
-◇ condition
+◇(condition): then_branch
+◇(condition): then_branch ◆: else_branch
+◇(condition): then_branch ◈(condition2): elseif_branch ◆: else_branch
+```
+
+**Examples**:
+```aether
+◇(x > 5): 📤"Large"
+◇(x > 5): 📤"Large" ◆: 📤"Small"
+◇(x > 10): 📤"Large" ◈(x > 5): 📤"Medium" ◆: 📤"Small"
+```
+
+---
+
+### ◈ - ElseIf Conditional
+
+**Symbol**: `◈` (White Diamond Containing Small Black Diamond)  
+**Unicode**: U+25C8  
+**Purpose**: Conditional alternative branch (else if statement)
+
+**Syntax**:
+```aether
+◇(condition1): branch1 ◈(condition2): branch2
+```
+
+**Example**:
+```aether
+◇(score > 90): 📤"A" ◈(score > 80): 📤"B" ◈(score > 70): 📤"C" ◆: 📤"F"
+```
+
+---
+
+### ◆ - Else Branch
+
+**Symbol**: `◆` (Black Diamond)  
+**Unicode**: U+25C6  
+**Purpose**: Default branch when all conditions are false (else statement)
+
+**Syntax**:
+```aether
+◇(condition): then_branch ◆: else_branch
+```
+
+**Example**:
+```aether
+◇(age >= 18): 📤"Adult" ◆: 📤"Minor"
 ```
 
 ---
@@ -293,11 +338,16 @@ Validate user exists
 
 **Symbol**: `⊕` (Circled Plus)  
 **Unicode**: U+2295  
-**Purpose**: Logical OR operation
+**Purpose**: Logical OR operation (returns true if either operand is truthy)
 
 **Syntax**:
 ```aether
-a ⊕ b
+condition1 ⊕ condition2
+```
+
+**Example**:
+```aether
+◇((x < 5) ⊕ (x > 15)): 📤"Out of range"
 ```
 
 ---
@@ -306,11 +356,16 @@ a ⊕ b
 
 **Symbol**: `⊗` (Circled Times)  
 **Unicode**: U+2297  
-**Purpose**: Logical AND operation
+**Purpose**: Logical AND operation (returns true only if both operands are truthy)
 
 **Syntax**:
 ```aether
-a ⊗ b
+condition1 ⊗ condition2
+```
+
+**Example**:
+```aether
+◇((x > 5) ⊗ (x < 15)): 📤"In range"
 ```
 
 ---
@@ -319,11 +374,16 @@ a ⊗ b
 
 **Symbol**: `¬` (Not Sign)  
 **Unicode**: U+00AC  
-**Purpose**: Logical negation
+**Purpose**: Logical negation (returns true if operand is falsy)
 
 **Syntax**:
 ```aether
 ¬ condition
+```
+
+**Example**:
+```aether
+◇(¬verified): 📤"Not verified"
 ```
 
 ---

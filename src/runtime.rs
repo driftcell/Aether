@@ -490,6 +490,31 @@ impl Runtime {
                 Ok(Value::Boolean(l != r))
             }
             
+            AstNode::And { left, right } => {
+                let l = self.eval_node(left)?;
+                // Short-circuit: if left is falsy, don't evaluate right
+                if !l.is_truthy() {
+                    return Ok(Value::Boolean(false));
+                }
+                let r = self.eval_node(right)?;
+                Ok(Value::Boolean(r.is_truthy()))
+            }
+            
+            AstNode::Or { left, right } => {
+                let l = self.eval_node(left)?;
+                // Short-circuit: if left is truthy, don't evaluate right
+                if l.is_truthy() {
+                    return Ok(Value::Boolean(true));
+                }
+                let r = self.eval_node(right)?;
+                Ok(Value::Boolean(r.is_truthy()))
+            }
+            
+            AstNode::Not { operand } => {
+                let val = self.eval_node(operand)?;
+                Ok(Value::Boolean(!val.is_truthy()))
+            }
+            
             AstNode::Immutable { name, value } => {
                 // Check if variable is already immutable
                 if self.immutable_vars.contains(name) {
@@ -1498,6 +1523,7 @@ impl Default for Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parser::ComparisonOp;
 
     #[test]
     fn test_runtime_literal() {
@@ -2261,6 +2287,233 @@ mod tests {
                 println!("HTTP POST with JSON failed (expected in some environments): {:?}", e);
             }
         }
+    #[test]
+    fn test_runtime_if_else() {
+        let mut runtime = Runtime::new();
+        
+        // Test if branch (true)
+        let node = AstNode::IfThen {
+            condition: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+            then_branch: Box::new(AstNode::Literal(LiteralValue::String("big".to_string()))),
+            else_branch: Some(Box::new(AstNode::Literal(LiteralValue::String("small".to_string())))),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::String("big".to_string()));
+        
+        // Test else branch (false)
+        let node2 = AstNode::IfThen {
+            condition: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+            then_branch: Box::new(AstNode::Literal(LiteralValue::String("big".to_string()))),
+            else_branch: Some(Box::new(AstNode::Literal(LiteralValue::String("small".to_string())))),
+        };
+        
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::String("small".to_string()));
+    }
+    
+    #[test]
+    fn test_runtime_if_elseif_else() {
+        let mut runtime = Runtime::new();
+        
+        // Test with value that triggers first condition
+        let node = AstNode::IfThen {
+            condition: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(12.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+            }),
+            then_branch: Box::new(AstNode::Literal(LiteralValue::String("large".to_string()))),
+            else_branch: Some(Box::new(AstNode::IfThen {
+                condition: Box::new(AstNode::Comparison {
+                    left: Box::new(AstNode::Literal(LiteralValue::Number(12.0))),
+                    operator: ComparisonOp::GreaterThan,
+                    right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+                }),
+                then_branch: Box::new(AstNode::Literal(LiteralValue::String("medium".to_string()))),
+                else_branch: Some(Box::new(AstNode::Literal(LiteralValue::String("small".to_string())))),
+            })),
+        };
+        
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::String("large".to_string()));
+        
+        // Test with value that triggers elseif
+        let node2 = AstNode::IfThen {
+            condition: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(7.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+            }),
+            then_branch: Box::new(AstNode::Literal(LiteralValue::String("large".to_string()))),
+            else_branch: Some(Box::new(AstNode::IfThen {
+                condition: Box::new(AstNode::Comparison {
+                    left: Box::new(AstNode::Literal(LiteralValue::Number(7.0))),
+                    operator: ComparisonOp::GreaterThan,
+                    right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+                }),
+                then_branch: Box::new(AstNode::Literal(LiteralValue::String("medium".to_string()))),
+                else_branch: Some(Box::new(AstNode::Literal(LiteralValue::String("small".to_string())))),
+            })),
+        };
+        
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::String("medium".to_string()));
+    }
+    
+    #[test]
+    fn test_runtime_and() {
+        let mut runtime = Runtime::new();
+        
+        // Both true (using comparisons that evaluate to true)
+        let node = AstNode::And {
+            left: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+            right: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(8.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+            }),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+        
+        // First false (short-circuit)
+        let node2 = AstNode::And {
+            left: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+            right: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(8.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+            }),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::Boolean(false));
+        
+        // Second false
+        let node3 = AstNode::And {
+            left: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+            right: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(2.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+        };
+        let result3 = runtime.eval_node(&node3).unwrap();
+        assert_eq!(result3, Value::Boolean(false));
+    }
+    
+    #[test]
+    fn test_runtime_or() {
+        let mut runtime = Runtime::new();
+        
+        // Both false
+        let node = AstNode::Or {
+            left: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+            right: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(2.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(false));
+        
+        // First true (short-circuit)
+        let node2 = AstNode::Or {
+            left: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+            right: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(2.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::Boolean(true));
+        
+        // Second true
+        let node3 = AstNode::Or {
+            left: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(2.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+            right: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(8.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+            }),
+        };
+        let result3 = runtime.eval_node(&node3).unwrap();
+        assert_eq!(result3, Value::Boolean(true));
+    }
+    
+    #[test]
+    fn test_runtime_not() {
+        let mut runtime = Runtime::new();
+        
+        // Not true condition
+        let node = AstNode::Not {
+            operand: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(false));
+        
+        // Not false condition
+        let node2 = AstNode::Not {
+            operand: Box::new(AstNode::Comparison {
+                left: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+                operator: ComparisonOp::GreaterThan,
+                right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            }),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::Boolean(true));
+        
+        // Not with truthy value (number)
+        let node3 = AstNode::Not {
+            operand: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+        };
+        let result3 = runtime.eval_node(&node3).unwrap();
+        assert_eq!(result3, Value::Boolean(false));
+        
+        // Not with falsy value (zero)
+        let node4 = AstNode::Not {
+            operand: Box::new(AstNode::Literal(LiteralValue::Number(0.0))),
+        };
+        let result4 = runtime.eval_node(&node4).unwrap();
+        assert_eq!(result4, Value::Boolean(true));
     }
 }
     

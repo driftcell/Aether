@@ -1,0 +1,2 @@
+// Complex logical operations
+25 ▷ age ⨠ 1 ▷ verified ⨠ ◇((age > 18) ⊗ verified): 📤"Adult verified" ◈(age > 18): 📤"Adult unverified" ◆: 📤"Minor"

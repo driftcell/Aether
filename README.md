@@ -58,7 +58,9 @@ Aether GlyphCode (~20 characters):
 | `🛑` | Halt | Terminate with error |
 | `✓` | Success | Validation success |
 | `⨠` | Sequence | Sequential operations |
-| `◇` | If | Conditional |
+| `◇` | If | Conditional (if) |
+| `◈` | ElseIf | Conditional alternative (else if) |
+| `◆` | Else | Default branch (else) |
 | `⊕` | Or | Logical OR |
 | `⊗` | And | Logical AND |
 | `¬` | Not | Logical NOT |
