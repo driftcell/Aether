@@ -62,6 +62,10 @@ pub enum Opcode {
     GreaterThan,
     /// Approximate equality
     Approx,
+    /// Greater than or equal
+    GreaterEqual,
+    /// Less than or equal
+    LessEqual,
     
     // Logical operations
     /// Logical AND
@@ -304,6 +308,8 @@ impl Opcode {
             Opcode::LessThan => 0x32,
             Opcode::GreaterThan => 0x33,
             Opcode::Approx => 0x34,
+            Opcode::GreaterEqual => 0x36,
+            Opcode::LessEqual => 0x37,
             
             Opcode::And => 0x40,
             Opcode::Or => 0x41,
@@ -448,6 +454,8 @@ impl Opcode {
             0x32 => Ok(Opcode::LessThan),
             0x33 => Ok(Opcode::GreaterThan),
             0x34 => Ok(Opcode::Approx),
+            0x36 => Ok(Opcode::GreaterEqual),
+            0x37 => Ok(Opcode::LessEqual),
             
             0x40 => Ok(Opcode::And),
             0x41 => Ok(Opcode::Or),

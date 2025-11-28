@@ -1407,6 +1407,8 @@ impl Runtime {
                         match operator {
                             ComparisonOp::GreaterThan => l > r,
                             ComparisonOp::LessThan => l < r,
+                            ComparisonOp::GreaterEqual => l >= r,
+                            ComparisonOp::LessEqual => l <= r,
                         }
                     }
                     _ => false,
@@ -1498,6 +1500,54 @@ impl Runtime {
                     (Value::Number(l), Value::Number(r)) => Ok(Value::Number(l - r)),
                     _ => Err(AetherError::RuntimeError(
                         "Subtraction requires numeric values".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::Multiply { left, right } => {
+                let left_val = self.eval_node(left)?;
+                let right_val = self.eval_node(right)?;
+                
+                match (left_val, right_val) {
+                    (Value::Number(l), Value::Number(r)) => Ok(Value::Number(l * r)),
+                    _ => Err(AetherError::RuntimeError(
+                        "Multiplication requires numeric values".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::Divide { left, right } => {
+                let left_val = self.eval_node(left)?;
+                let right_val = self.eval_node(right)?;
+                
+                match (left_val, right_val) {
+                    (Value::Number(l), Value::Number(r)) => {
+                        if r == 0.0 {
+                            Err(AetherError::RuntimeError("Division by zero".to_string()))
+                        } else {
+                            Ok(Value::Number(l / r))
+                        }
+                    }
+                    _ => Err(AetherError::RuntimeError(
+                        "Division requires numeric values".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::Modulo { left, right } => {
+                let left_val = self.eval_node(left)?;
+                let right_val = self.eval_node(right)?;
+                
+                match (left_val, right_val) {
+                    (Value::Number(l), Value::Number(r)) => {
+                        if r == 0.0 {
+                            Err(AetherError::RuntimeError("Modulo by zero".to_string()))
+                        } else {
+                            Ok(Value::Number(l % r))
+                        }
+                    }
+                    _ => Err(AetherError::RuntimeError(
+                        "Modulo requires numeric values".to_string()
                     ))
                 }
             }
@@ -3079,5 +3129,121 @@ mod tests {
             }
             _ => panic!("Expected object"),
         }
+    }
+    
+    #[test]
+    fn test_runtime_multiply() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Multiply {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(6.0))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(7.0))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(42.0));
+    }
+    
+    #[test]
+    fn test_runtime_divide() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Divide {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(6.0))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(7.0));
+        
+        // Test division by zero
+        let node2 = AstNode::Divide {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(0.0))),
+        };
+        let result2 = runtime.eval_node(&node2);
+        assert!(result2.is_err());
+    }
+    
+    #[test]
+    fn test_runtime_modulo() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::Modulo {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(17.0))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(2.0));
+        
+        // Test modulo by zero
+        let node2 = AstNode::Modulo {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(17.0))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(0.0))),
+        };
+        let result2 = runtime.eval_node(&node2);
+        assert!(result2.is_err());
+    }
+    
+    #[test]
+    fn test_runtime_greater_equal() {
+        let mut runtime = Runtime::new();
+        
+        // Test greater equal true
+        let node = AstNode::Comparison {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+            operator: ComparisonOp::GreaterEqual,
+            right: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+        
+        // Test greater equal true (greater)
+        let node2 = AstNode::Comparison {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(15.0))),
+            operator: ComparisonOp::GreaterEqual,
+            right: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::Boolean(true));
+        
+        // Test greater equal false
+        let node3 = AstNode::Comparison {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            operator: ComparisonOp::GreaterEqual,
+            right: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+        };
+        let result3 = runtime.eval_node(&node3).unwrap();
+        assert_eq!(result3, Value::Boolean(false));
+    }
+    
+    #[test]
+    fn test_runtime_less_equal() {
+        let mut runtime = Runtime::new();
+        
+        // Test less equal true (equal)
+        let node = AstNode::Comparison {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+            operator: ComparisonOp::LessEqual,
+            right: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+        
+        // Test less equal true (less)
+        let node2 = AstNode::Comparison {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+            operator: ComparisonOp::LessEqual,
+            right: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::Boolean(true));
+        
+        // Test less equal false
+        let node3 = AstNode::Comparison {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(15.0))),
+            operator: ComparisonOp::LessEqual,
+            right: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+        };
+        let result3 = runtime.eval_node(&node3).unwrap();
+        assert_eq!(result3, Value::Boolean(false));
     }
 }

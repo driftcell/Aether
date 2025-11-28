@@ -317,6 +317,8 @@ impl Compiler {
                 match operator {
                     ComparisonOp::GreaterThan => self.program.emit_opcode(Opcode::GreaterThan),
                     ComparisonOp::LessThan => self.program.emit_opcode(Opcode::LessThan),
+                    ComparisonOp::GreaterEqual => self.program.emit_opcode(Opcode::GreaterEqual),
+                    ComparisonOp::LessEqual => self.program.emit_opcode(Opcode::LessEqual),
                 }
             }
             
@@ -724,6 +726,85 @@ impl Compiler {
             // Math operations
             AstNode::Infinity => {
                 self.program.emit_opcode(Opcode::Infinity);
+            }
+            
+            // Bootstrap operations - arithmetic
+            AstNode::Add { left, right } => {
+                self.compile_node(left)?;
+                self.compile_node(right)?;
+                self.program.emit_opcode(Opcode::Add);
+            }
+            
+            AstNode::Subtract { left, right } => {
+                self.compile_node(left)?;
+                self.compile_node(right)?;
+                self.program.emit_opcode(Opcode::Sub);
+            }
+            
+            AstNode::Multiply { left, right } => {
+                self.compile_node(left)?;
+                self.compile_node(right)?;
+                self.program.emit_opcode(Opcode::Mul);
+            }
+            
+            AstNode::Divide { left, right } => {
+                self.compile_node(left)?;
+                self.compile_node(right)?;
+                self.program.emit_opcode(Opcode::Div);
+            }
+            
+            AstNode::Modulo { left, right } => {
+                // Note: Modulo not in bytecode, use runtime
+                self.compile_node(left)?;
+                self.compile_node(right)?;
+                // Emit as custom handling - will need to add to bytecode
+                return Err(AetherError::CompilerError(
+                    "Modulo not yet supported in bytecode compilation".to_string()
+                ));
+            }
+            
+            AstNode::StringConcat { left, right } => {
+                self.compile_node(left)?;
+                self.compile_node(right)?;
+                // String concat needs special handling in bytecode
+                // For now, emit as Join with empty separator
+                self.program.emit_opcode(Opcode::Join);
+            }
+            
+            AstNode::Length { value } => {
+                self.compile_node(value)?;
+                // Length needs bytecode support
+                return Err(AetherError::CompilerError(
+                    "Length not yet supported in bytecode compilation".to_string()
+                ));
+            }
+            
+            AstNode::Index { target, index } => {
+                self.compile_node(target)?;
+                self.compile_node(index)?;
+                // Index needs bytecode support
+                return Err(AetherError::CompilerError(
+                    "Index not yet supported in bytecode compilation".to_string()
+                ));
+            }
+            
+            AstNode::ArrayLiteral { elements } => {
+                for elem in elements {
+                    self.compile_node(elem)?;
+                }
+                self.program.emit_opcode(Opcode::MakeArray);
+                self.program.emit_u32(elements.len() as u32);
+            }
+            
+            AstNode::ObjectLiteral { pairs } => {
+                for (key, value) in pairs {
+                    let key_idx = self.program.add_constant(key.clone());
+                    self.program.emit_opcode(Opcode::PushString);
+                    self.program.emit_u32(key_idx);
+                    self.compile_node(value)?;
+                }
+                self.program.emit_opcode(Opcode::MakeObject);
+                self.program.emit_u32(pairs.len() as u32);
             }
             
             _ => {

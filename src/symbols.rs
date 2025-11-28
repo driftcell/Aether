@@ -279,6 +279,18 @@ pub enum Symbol {
     SliceEnd,
     /// ≔ - Assignment (alternative to PipeInto)
     Assign,
+    
+    // Extended bootstrap operations (v1.5 - for full self-hosting)
+    /// * - Multiplication
+    Multiply,
+    /// / - Division
+    Divide,
+    /// % - Modulo
+    Modulo,
+    /// ≥ - Greater than or equal
+    GreaterEqual,
+    /// ≤ - Less than or equal
+    LessEqual,
 }
 
 impl Symbol {
@@ -400,6 +412,12 @@ impl Symbol {
             "⊢" => Some(Symbol::SliceStart),
             "⊣" => Some(Symbol::SliceEnd),
             "≔" => Some(Symbol::Assign),
+            // Extended bootstrap operations (v1.5)
+            "*" => Some(Symbol::Multiply),
+            "/" => Some(Symbol::Divide),
+            "%" => Some(Symbol::Modulo),
+            "≥" => Some(Symbol::GreaterEqual),
+            "≤" => Some(Symbol::LessEqual),
             _ => None,
         }
     }
@@ -529,6 +547,12 @@ impl Symbol {
             Symbol::SliceStart => "⊢".to_string(),
             Symbol::SliceEnd => "⊣".to_string(),
             Symbol::Assign => "≔".to_string(),
+            // Extended bootstrap operations (v1.5)
+            Symbol::Multiply => "*".to_string(),
+            Symbol::Divide => "/".to_string(),
+            Symbol::Modulo => "%".to_string(),
+            Symbol::GreaterEqual => "≥".to_string(),
+            Symbol::LessEqual => "≤".to_string(),
             Symbol::Identifier(id) => id.clone(),
             Symbol::StringLiteral(s) => format!("\"{}\"", s),
             Symbol::NumberLiteral(n) => n.to_string(),
@@ -662,6 +686,12 @@ impl Symbol {
             Symbol::SliceStart => "Start array slice",
             Symbol::SliceEnd => "End array slice",
             Symbol::Assign => "Variable assignment",
+            // Extended bootstrap operations (v1.5)
+            Symbol::Multiply => "Arithmetic multiplication",
+            Symbol::Divide => "Arithmetic division",
+            Symbol::Modulo => "Modulo operation",
+            Symbol::GreaterEqual => "Greater than or equal comparison",
+            Symbol::LessEqual => "Less than or equal comparison",
             Symbol::Identifier(_) => "Identifier",
             Symbol::StringLiteral(_) => "String literal",
             Symbol::NumberLiteral(_) => "Number literal",

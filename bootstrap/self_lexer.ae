@@ -1,0 +1,49 @@
+// Aether Self-Hosting Lexer v1.0
+// A minimal lexer written in Aether that tokenizes simple code
+// Demonstrates language bootstrapping capabilities
+
+// Test input - simple string to tokenize
+"Hello" ▷ source ⨠
+
+// Get source length
+source ⇢ 📏 ▷ length ⨠
+
+🪵 "Starting lexer with input:" ⨠
+🪵 source ⨠
+🪵 "Length:" ⨠
+🪵 length ⨠
+
+// Process each character using index access
+🪵 "Characters:" ⨠
+🪵 (source⟦0⟧) ⨠
+🪵 (source⟦1⟧) ⨠
+🪵 (source⟦2⟧) ⨠
+🪵 (source⟦3⟧) ⨠
+🪵 (source⟦4⟧) ⨠
+
+// Create a token object
+{type: "STRING", value: source} ▷ token ⨠
+🪵 "Token created:" ⨠
+🪵 token ⨠
+
+// Test arithmetic for position tracking
+0 ▷ pos ⨠
+pos + 1 ▷ pos ⨠
+🪵 "Position after increment:" ⨠
+🪵 pos ⨠
+
+// Test comparison for loop condition
+🪵 "Is pos < length?" ⨠
+🪵 (pos < length) ⨠
+
+// Test modulo for character classification
+🪵 "17 % 5 = " ⨠
+🪵 (17 % 5) ⨠
+
+// Test multiply and divide
+🪵 "6 * 7 = " ⨠
+🪵 (6 * 7) ⨠
+🪵 "42 / 6 = " ⨠
+🪵 (42 / 6) ⨠
+
+📤 "Lexer test completed!"
