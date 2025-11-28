@@ -1,36 +1,457 @@
 // ==================================================================
-// Aether Self-Hosting Lexer (v1.4)
+// Aether Self-Hosting Lexer (v2.0 - Complete Bootstrap Implementation)
 // This lexer is written in Aether and can tokenize Aether source code
-// First step of compiler bootstrapping
+// Self-bootstrapping compiler component
 // ==================================================================
 
-// Token types as constants
-🧊 TOKEN_OUTPUT "OUTPUT" ⨠
-🧊 TOKEN_INPUT "INPUT" ⨠
-🧊 TOKEN_PIPE "PIPE" ⨠
-🧊 TOKEN_SEQUENCE "SEQUENCE" ⨠
-🧊 TOKEN_STRING "STRING" ⨠
-🧊 TOKEN_EOF "EOF" ⨠
+// Token type constants
+🧊 T_OUTPUT "OUTPUT" ⨠
+🧊 T_INPUT "INPUT" ⨠
+🧊 T_PIPE "PIPE" ⨠
+🧊 T_PIPEINTO "PIPEINTO" ⨠
+🧊 T_SEQUENCE "SEQUENCE" ⨠
+🧊 T_STRING "STRING" ⨠
+🧊 T_NUMBER "NUMBER" ⨠
+🧊 T_IDENTIFIER "IDENTIFIER" ⨠
+🧊 T_FUNCTION "FUNCTION" ⨠
+🧊 T_LOG "LOG" ⨠
+🧊 T_IF "IF" ⨠
+🧊 T_ELSEIF "ELSEIF" ⨠
+🧊 T_ELSE "ELSE" ⨠
+🧊 T_LOOP "LOOP" ⨠
+🧊 T_EQUAL "EQUAL" ⨠
+🧊 T_NOTEQUAL "NOTEQUAL" ⨠
+🧊 T_AND "AND" ⨠
+🧊 T_OR "OR" ⨠
+🧊 T_NOT "NOT" ⨠
+🧊 T_LENGTH "LENGTH" ⨠
+🧊 T_PUSH "PUSH" ⨠
+🧊 T_CONCAT "CONCAT" ⨠
+🧊 T_ADD "ADD" ⨠
+🧊 T_SUBTRACT "SUBTRACT" ⨠
+🧊 T_MULTIPLY "MULTIPLY" ⨠
+🧊 T_DIVIDE "DIVIDE" ⨠
+🧊 T_MODULO "MODULO" ⨠
+🧊 T_COLON "COLON" ⨠
+🧊 T_LPAREN "LPAREN" ⨠
+🧊 T_RPAREN "RPAREN" ⨠
+🧊 T_LBRACKET "LBRACKET" ⨠
+🧊 T_RBRACKET "RBRACKET" ⨠
+🧊 T_LBRACE "LBRACE" ⨠
+🧊 T_RBRACE "RBRACE" ⨠
+🧊 T_COMMA "COMMA" ⨠
+🧊 T_DOT "DOT" ⨠
+🧊 T_GT "GT" ⨠
+🧊 T_LT "LT" ⨠
+🧊 T_IMMUTABLE "IMMUTABLE" ⨠
+🧊 T_INDEX_START "INDEX_START" ⨠
+🧊 T_INDEX_END "INDEX_END" ⨠
+🧊 T_EOF "EOF" ⨠
+🧊 T_UNKNOWN "UNKNOWN" ⨠
+🧊 T_PERSIST "PERSIST" ⨠
+🧊 T_GUARD "GUARD" ⨠
+🧊 T_HALT "HALT" ⨠
+🧊 T_FOREACH "FOREACH" ⨠
+🧊 T_FILTER "FILTER" ⨠
+🧊 T_REDUCE "REDUCE" ⨠
+🧊 T_ASYNC "ASYNC" ⨠
+🧊 T_AWAIT "AWAIT" ⨠
 
-// Create test tokens for hello world: 📤 "Hello"
-[
-  {type: "OUTPUT", value: "📤", position: 0},
-  {type: "STRING", value: "Hello", position: 3}
-] ▷ tokens ⨠
+// ================================================================
+// MAIN LEXER TOKENIZE FUNCTION
+// Input: source code string
+// Output: array of token objects
+// ================================================================
 
-// Output the token count (tests array length)
-tokens ⇢ 📏 ▷ count ⨠
-🪵 count ⨠
+// Test input - multiple numbers
+"42 + 123" ▷ source ⨠
 
-// Test string operations
-"Hello" ▷ source ⨠
-source ⇢ 📏 ▷ len ⨠
-🪵 len ⨠
+// Initialize lexer state
+source ⇢ 📏 ▷ sourceLen ⨠
+0 ▷ pos ⨠
+[] ▷ tokens ⨠
 
-// Test character access (for lexer iteration)
-source[0] ▷ firstChar ⨠
-🪵 firstChar ⨠
+🪵 "=== AETHER SELF-HOSTING LEXER ===" ⨠
+🪵 "Source:" ⨠
+🪵 source ⨠
+🪵 "Length:" ⨠
+🪵 sourceLen ⨠
+🪵 "" ⨠
 
-// Test string concatenation for building tokens
-"Token: " ⧺ firstChar ▷ msg ⨠
-📤 msg
+// Main tokenization loop
+↻(pos < sourceLen): (
+  // Get current character
+  source⟦pos⟧ ▷ ch ⨠
+  
+  // Skip whitespace (space only - tabs handled as unknown)
+  ◇(ch ≡ " "): (
+    pos + 1 ▷ pos
+  )
+  // Note: String literal handling removed temporarily
+  // because Aether lexer does not support escape sequences
+  // Handle numbers
+  ◈((ch ≡ "0") ⊕ (ch ≡ "1") ⊕ (ch ≡ "2") ⊕ (ch ≡ "3") ⊕ 
+     (ch ≡ "4") ⊕ (ch ≡ "5") ⊕ (ch ≡ "6") ⊕ (ch ≡ "7") ⊕
+     (ch ≡ "8") ⊕ (ch ≡ "9")): (
+    pos ▷ startPos ⨠
+    "" ▷ numStr ⨠
+    
+    ↻((pos < sourceLen) ⊗ 
+      ((source⟦pos⟧ ≡ "0") ⊕ (source⟦pos⟧ ≡ "1") ⊕ (source⟦pos⟧ ≡ "2") ⊕
+       (source⟦pos⟧ ≡ "3") ⊕ (source⟦pos⟧ ≡ "4") ⊕ (source⟦pos⟧ ≡ "5") ⊕
+       (source⟦pos⟧ ≡ "6") ⊕ (source⟦pos⟧ ≡ "7") ⊕ (source⟦pos⟧ ≡ "8") ⊕
+       (source⟦pos⟧ ≡ "9") ⊕ (source⟦pos⟧ ≡ "."))): (
+      numStr ⧺ source⟦pos⟧ ▷ numStr ⨠
+      pos + 1 ▷ pos
+    ) ⨠
+    
+    {type: T_NUMBER, value: numStr, position: startPos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: NUMBER" ⨠
+    🪵 numStr
+  )
+  // Handle identifiers
+  ◈((ch ≡ "a") ⊕ (ch ≡ "b") ⊕ (ch ≡ "c") ⊕ (ch ≡ "d") ⊕
+     (ch ≡ "e") ⊕ (ch ≡ "f") ⊕ (ch ≡ "g") ⊕ (ch ≡ "h") ⊕
+     (ch ≡ "i") ⊕ (ch ≡ "j") ⊕ (ch ≡ "k") ⊕ (ch ≡ "l") ⊕
+     (ch ≡ "m") ⊕ (ch ≡ "n") ⊕ (ch ≡ "o") ⊕ (ch ≡ "p") ⊕
+     (ch ≡ "q") ⊕ (ch ≡ "r") ⊕ (ch ≡ "s") ⊕ (ch ≡ "t") ⊕
+     (ch ≡ "u") ⊕ (ch ≡ "v") ⊕ (ch ≡ "w") ⊕ (ch ≡ "x") ⊕
+     (ch ≡ "y") ⊕ (ch ≡ "z") ⊕ (ch ≡ "_") ⊕
+     (ch ≡ "A") ⊕ (ch ≡ "B") ⊕ (ch ≡ "C") ⊕ (ch ≡ "D") ⊕
+     (ch ≡ "E") ⊕ (ch ≡ "F") ⊕ (ch ≡ "G") ⊕ (ch ≡ "H") ⊕
+     (ch ≡ "I") ⊕ (ch ≡ "J") ⊕ (ch ≡ "K") ⊕ (ch ≡ "L") ⊕
+     (ch ≡ "M") ⊕ (ch ≡ "N") ⊕ (ch ≡ "O") ⊕ (ch ≡ "P") ⊕
+     (ch ≡ "Q") ⊕ (ch ≡ "R") ⊕ (ch ≡ "S") ⊕ (ch ≡ "T") ⊕
+     (ch ≡ "U") ⊕ (ch ≡ "V") ⊕ (ch ≡ "W") ⊕ (ch ≡ "X") ⊕
+     (ch ≡ "Y") ⊕ (ch ≡ "Z")): (
+    pos ▷ startPos ⨠
+    "" ▷ identStr ⨠
+    
+    ↻((pos < sourceLen) ⊗ 
+      ((source⟦pos⟧ ≡ "a") ⊕ (source⟦pos⟧ ≡ "b") ⊕ (source⟦pos⟧ ≡ "c") ⊕
+       (source⟦pos⟧ ≡ "d") ⊕ (source⟦pos⟧ ≡ "e") ⊕ (source⟦pos⟧ ≡ "f") ⊕
+       (source⟦pos⟧ ≡ "g") ⊕ (source⟦pos⟧ ≡ "h") ⊕ (source⟦pos⟧ ≡ "i") ⊕
+       (source⟦pos⟧ ≡ "j") ⊕ (source⟦pos⟧ ≡ "k") ⊕ (source⟦pos⟧ ≡ "l") ⊕
+       (source⟦pos⟧ ≡ "m") ⊕ (source⟦pos⟧ ≡ "n") ⊕ (source⟦pos⟧ ≡ "o") ⊕
+       (source⟦pos⟧ ≡ "p") ⊕ (source⟦pos⟧ ≡ "q") ⊕ (source⟦pos⟧ ≡ "r") ⊕
+       (source⟦pos⟧ ≡ "s") ⊕ (source⟦pos⟧ ≡ "t") ⊕ (source⟦pos⟧ ≡ "u") ⊕
+       (source⟦pos⟧ ≡ "v") ⊕ (source⟦pos⟧ ≡ "w") ⊕ (source⟦pos⟧ ≡ "x") ⊕
+       (source⟦pos⟧ ≡ "y") ⊕ (source⟦pos⟧ ≡ "z") ⊕ (source⟦pos⟧ ≡ "_") ⊕
+       (source⟦pos⟧ ≡ "A") ⊕ (source⟦pos⟧ ≡ "B") ⊕ (source⟦pos⟧ ≡ "C") ⊕
+       (source⟦pos⟧ ≡ "D") ⊕ (source⟦pos⟧ ≡ "E") ⊕ (source⟦pos⟧ ≡ "F") ⊕
+       (source⟦pos⟧ ≡ "G") ⊕ (source⟦pos⟧ ≡ "H") ⊕ (source⟦pos⟧ ≡ "I") ⊕
+       (source⟦pos⟧ ≡ "J") ⊕ (source⟦pos⟧ ≡ "K") ⊕ (source⟦pos⟧ ≡ "L") ⊕
+       (source⟦pos⟧ ≡ "M") ⊕ (source⟦pos⟧ ≡ "N") ⊕ (source⟦pos⟧ ≡ "O") ⊕
+       (source⟦pos⟧ ≡ "P") ⊕ (source⟦pos⟧ ≡ "Q") ⊕ (source⟦pos⟧ ≡ "R") ⊕
+       (source⟦pos⟧ ≡ "S") ⊕ (source⟦pos⟧ ≡ "T") ⊕ (source⟦pos⟧ ≡ "U") ⊕
+       (source⟦pos⟧ ≡ "V") ⊕ (source⟦pos⟧ ≡ "W") ⊕ (source⟦pos⟧ ≡ "X") ⊕
+       (source⟦pos⟧ ≡ "Y") ⊕ (source⟦pos⟧ ≡ "Z") ⊕
+       (source⟦pos⟧ ≡ "0") ⊕ (source⟦pos⟧ ≡ "1") ⊕ (source⟦pos⟧ ≡ "2") ⊕
+       (source⟦pos⟧ ≡ "3") ⊕ (source⟦pos⟧ ≡ "4") ⊕ (source⟦pos⟧ ≡ "5") ⊕
+       (source⟦pos⟧ ≡ "6") ⊕ (source⟦pos⟧ ≡ "7") ⊕ (source⟦pos⟧ ≡ "8") ⊕
+       (source⟦pos⟧ ≡ "9"))): (
+      identStr ⧺ source⟦pos⟧ ▷ identStr ⨠
+      pos + 1 ▷ pos
+    ) ⨠
+    
+    {type: T_IDENTIFIER, value: identStr, position: startPos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: IDENTIFIER" ⨠
+    🪵 identStr
+  )
+  // Handle Aether symbols
+  ◈(ch ≡ "📤"): (
+    {type: T_OUTPUT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: OUTPUT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "📥"): (
+    {type: T_INPUT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: INPUT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⇢"): (
+    {type: T_PIPE, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: PIPE" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "▷"): (
+    {type: T_PIPEINTO, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: PIPEINTO" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⨠"): (
+    {type: T_SEQUENCE, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: SEQUENCE" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "🪵"): (
+    {type: T_LOG, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: LOG" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "💾"): (
+    {type: T_PERSIST, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: PERSIST" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "ƒ"): (
+    {type: T_FUNCTION, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: FUNCTION" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "🧊"): (
+    {type: T_IMMUTABLE, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: IMMUTABLE" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "◇"): (
+    {type: T_IF, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: IF" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "◈"): (
+    {type: T_ELSEIF, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: ELSEIF" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "◆"): (
+    {type: T_ELSE, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: ELSE" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "↻"): (
+    {type: T_LOOP, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: LOOP" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "∀"): (
+    {type: T_FOREACH, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: FOREACH" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "∃"): (
+    {type: T_FILTER, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: FILTER" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "∑"): (
+    {type: T_REDUCE, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: REDUCE" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⚡"): (
+    {type: T_ASYNC, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: ASYNC" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⏳"): (
+    {type: T_AWAIT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: AWAIT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "≡"): (
+    {type: T_EQUAL, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: EQUAL" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "≠"): (
+    {type: T_NOTEQUAL, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: NOTEQUAL" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⊕"): (
+    {type: T_OR, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: OR" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⊗"): (
+    {type: T_AND, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: AND" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "¬"): (
+    {type: T_NOT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: NOT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⧺"): (
+    {type: T_CONCAT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: CONCAT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "📏"): (
+    {type: T_LENGTH, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: LENGTH" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⊞"): (
+    {type: T_PUSH, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: PUSH" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⟦"): (
+    {type: T_INDEX_START, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: INDEX_START" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "⟧"): (
+    {type: T_INDEX_END, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: INDEX_END" ⨠
+    pos + 1 ▷ pos
+  )
+  // Punctuation and operators
+  ◈(ch ≡ ":"): (
+    {type: T_COLON, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: COLON" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "("): (
+    {type: T_LPAREN, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: LPAREN" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ ")"): (
+    {type: T_RPAREN, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: RPAREN" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "["): (
+    {type: T_LBRACKET, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: LBRACKET" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "]"): (
+    {type: T_RBRACKET, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: RBRACKET" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "{"): (
+    {type: T_LBRACE, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: LBRACE" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "}"): (
+    {type: T_RBRACE, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: RBRACE" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ ","): (
+    {type: T_COMMA, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: COMMA" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "."): (
+    {type: T_DOT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: DOT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ ">"): (
+    {type: T_GT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: GT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "<"): (
+    {type: T_LT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: LT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "+"): (
+    {type: T_ADD, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: ADD" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "-"): (
+    {type: T_SUBTRACT, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: SUBTRACT" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "*"): (
+    {type: T_MULTIPLY, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: MULTIPLY" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "/"): (
+    {type: T_DIVIDE, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: DIVIDE" ⨠
+    pos + 1 ▷ pos
+  )
+  ◈(ch ≡ "%"): (
+    {type: T_MODULO, value: ch, position: pos} ▷ tok ⨠
+    tokens ⇢ ⊞ tok ▷ tokens ⨠
+    🪵 "Token: MODULO" ⨠
+    pos + 1 ▷ pos
+  )
+  // Unknown character - skip
+  ◆: (
+    🪵 "Skipping unknown character" ⨠
+    pos + 1 ▷ pos
+  )
+) ⨠
+
+// Add EOF token
+{type: T_EOF, value: "", position: pos} ▷ eofTok ⨠
+tokens ⇢ ⊞ eofTok ▷ tokens ⨠
+
+// Output results
+🪵 "" ⨠
+🪵 "=== TOKENIZATION COMPLETE ===" ⨠
+🪵 "Total tokens:" ⨠
+tokens ⇢ 📏 ▷ tokenCount ⨠
+🪵 tokenCount ⨠
+
+// Display all tokens
+🪵 "" ⨠
+🪵 "=== TOKEN LIST ===" ⨠
+0 ▷ i ⨠
+↻(i < tokenCount): (
+  tokens⟦i⟧ ▷ t ⨠
+  🪵 t ⨠
+  i + 1 ▷ i
+) ⨠
+
+📤 "Lexer bootstrap complete!"
