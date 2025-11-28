@@ -463,6 +463,17 @@ impl Explainer {
             AstNode::HttpPatch { .. } => format!("{}HTTP PATCH", self.indent()),
             AstNode::HttpHead { .. } => format!("{}HTTP HEAD", self.indent()),
             AstNode::HttpOptions { .. } => format!("{}HTTP OPTIONS", self.indent()),
+            // Bootstrap operations (v1.4)
+            AstNode::Length { .. } => format!("{}length", self.indent()),
+            AstNode::Index { .. } => format!("{}index access", self.indent()),
+            AstNode::ArrayPush { .. } => format!("{}array push", self.indent()),
+            AstNode::Add { .. } => format!("{}add", self.indent()),
+            AstNode::Subtract { .. } => format!("{}subtract", self.indent()),
+            AstNode::StringConcat { .. } => format!("{}string concat", self.indent()),
+            AstNode::CharAt { .. } => format!("{}char at", self.indent()),
+            AstNode::Slice { .. } => format!("{}slice", self.indent()),
+            AstNode::ArrayLiteral { .. } => format!("{}array literal", self.indent()),
+            AstNode::ObjectLiteral { .. } => format!("{}object literal", self.indent()),
         }
     }
     

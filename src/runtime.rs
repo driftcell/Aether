@@ -1414,6 +1414,188 @@ impl Runtime {
                 
                 Ok(Value::Boolean(result))
             }
+            
+            // Bootstrap operations (v1.4 - for compiler self-hosting)
+            AstNode::Length { value } => {
+                let val = self.eval_node(value)?;
+                match val {
+                    Value::String(s) => Ok(Value::Number(s.chars().count() as f64)),
+                    Value::Array(arr) => Ok(Value::Number(arr.len() as f64)),
+                    _ => Err(AetherError::RuntimeError(
+                        "Length requires string or array".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::Index { target, index } => {
+                let tgt = self.eval_node(target)?;
+                let idx = self.eval_node(index)?;
+                
+                let idx_num = match idx {
+                    Value::Number(n) => n as usize,
+                    _ => return Err(AetherError::RuntimeError("Index must be a number".to_string())),
+                };
+                
+                match tgt {
+                    Value::String(s) => {
+                        s.chars().nth(idx_num)
+                            .map(|c| Value::String(c.to_string()))
+                            .ok_or_else(|| AetherError::RuntimeError(
+                                format!("String index {} out of bounds", idx_num)
+                            ))
+                    }
+                    Value::Array(arr) => {
+                        arr.get(idx_num).cloned()
+                            .ok_or_else(|| AetherError::RuntimeError(
+                                format!("Array index {} out of bounds", idx_num)
+                            ))
+                    }
+                    _ => Err(AetherError::RuntimeError(
+                        "Index access requires string or array".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::ArrayPush { array, element } => {
+                let arr_val = self.eval_node(array)?;
+                let elem = self.eval_node(element)?;
+                
+                match arr_val {
+                    Value::Array(mut arr) => {
+                        arr.push(elem);
+                        Ok(Value::Array(arr))
+                    }
+                    _ => Err(AetherError::RuntimeError(
+                        "Push requires an array".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::Add { left, right } => {
+                let left_val = self.eval_node(left)?;
+                let right_val = self.eval_node(right)?;
+                
+                match (left_val, right_val) {
+                    (Value::Number(l), Value::Number(r)) => Ok(Value::Number(l + r)),
+                    _ => Err(AetherError::RuntimeError(
+                        "Addition requires numeric values".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::Subtract { left, right } => {
+                let left_val = self.eval_node(left)?;
+                let right_val = self.eval_node(right)?;
+                
+                match (left_val, right_val) {
+                    (Value::Number(l), Value::Number(r)) => Ok(Value::Number(l - r)),
+                    _ => Err(AetherError::RuntimeError(
+                        "Subtraction requires numeric values".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::StringConcat { left, right } => {
+                let left_val = self.eval_node(left)?;
+                let right_val = self.eval_node(right)?;
+                
+                let left_str = match left_val {
+                    Value::String(s) => s,
+                    Value::Number(n) => n.to_string(),
+                    Value::Boolean(b) => b.to_string(),
+                    Value::Null => "null".to_string(),
+                    _ => format!("{:?}", left_val),
+                };
+                
+                let right_str = match right_val {
+                    Value::String(s) => s,
+                    Value::Number(n) => n.to_string(),
+                    Value::Boolean(b) => b.to_string(),
+                    Value::Null => "null".to_string(),
+                    _ => format!("{:?}", right_val),
+                };
+                
+                Ok(Value::String(format!("{}{}", left_str, right_str)))
+            }
+            
+            AstNode::CharAt { target, index } => {
+                let tgt = self.eval_node(target)?;
+                let idx = self.eval_node(index)?;
+                
+                let idx_num = match idx {
+                    Value::Number(n) => n as usize,
+                    _ => return Err(AetherError::RuntimeError("CharAt index must be a number".to_string())),
+                };
+                
+                match tgt {
+                    Value::String(s) => {
+                        s.chars().nth(idx_num)
+                            .map(|c| Value::String(c.to_string()))
+                            .ok_or_else(|| AetherError::RuntimeError(
+                                format!("CharAt index {} out of bounds", idx_num)
+                            ))
+                    }
+                    _ => Err(AetherError::RuntimeError(
+                        "CharAt requires a string".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::Slice { target, start, end } => {
+                let tgt = self.eval_node(target)?;
+                let start_idx = match self.eval_node(start)? {
+                    Value::Number(n) => n as usize,
+                    _ => return Err(AetherError::RuntimeError("Slice start must be a number".to_string())),
+                };
+                
+                let end_idx = if let Some(end_node) = end {
+                    match self.eval_node(end_node)? {
+                        Value::Number(n) => Some(n as usize),
+                        _ => return Err(AetherError::RuntimeError("Slice end must be a number".to_string())),
+                    }
+                } else {
+                    None
+                };
+                
+                match tgt {
+                    Value::String(s) => {
+                        let chars: Vec<char> = s.chars().collect();
+                        let end = end_idx.unwrap_or(chars.len());
+                        if start_idx <= end && end <= chars.len() {
+                            Ok(Value::String(chars[start_idx..end].iter().collect()))
+                        } else {
+                            Err(AetherError::RuntimeError("Slice indices out of bounds".to_string()))
+                        }
+                    }
+                    Value::Array(arr) => {
+                        let end = end_idx.unwrap_or(arr.len());
+                        if start_idx <= end && end <= arr.len() {
+                            Ok(Value::Array(arr[start_idx..end].to_vec()))
+                        } else {
+                            Err(AetherError::RuntimeError("Slice indices out of bounds".to_string()))
+                        }
+                    }
+                    _ => Err(AetherError::RuntimeError(
+                        "Slice requires string or array".to_string()
+                    ))
+                }
+            }
+            
+            AstNode::ArrayLiteral { elements } => {
+                let mut arr = Vec::with_capacity(elements.len());
+                for elem in elements {
+                    arr.push(self.eval_node(elem)?);
+                }
+                Ok(Value::Array(arr))
+            }
+            
+            AstNode::ObjectLiteral { pairs } => {
+                let mut obj = HashMap::new();
+                for (key, value) in pairs {
+                    obj.insert(key.clone(), self.eval_node(value)?);
+                }
+                Ok(Value::Object(obj))
+            }
         }
     }
     
@@ -2729,6 +2911,145 @@ mod tests {
             Err(e) => {
                 println!("HTTP with headers failed (expected in some environments): {:?}", e);
             }
+        }
+    }
+    
+    // Bootstrap operations tests (v1.4)
+    #[test]
+    fn test_runtime_length() {
+        let mut runtime = Runtime::new();
+        
+        // Test string length
+        let node = AstNode::Length {
+            value: Box::new(AstNode::Literal(LiteralValue::String("hello".to_string()))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(5.0));
+        
+        // Test array length
+        let node2 = AstNode::Length {
+            value: Box::new(AstNode::ArrayLiteral {
+                elements: vec![
+                    AstNode::Literal(LiteralValue::Number(1.0)),
+                    AstNode::Literal(LiteralValue::Number(2.0)),
+                    AstNode::Literal(LiteralValue::Number(3.0)),
+                ],
+            }),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::Number(3.0));
+    }
+    
+    #[test]
+    fn test_runtime_index() {
+        let mut runtime = Runtime::new();
+        
+        // Test string index
+        let node = AstNode::Index {
+            target: Box::new(AstNode::Literal(LiteralValue::String("hello".to_string()))),
+            index: Box::new(AstNode::Literal(LiteralValue::Number(1.0))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::String("e".to_string()));
+        
+        // Test array index
+        let node2 = AstNode::Index {
+            target: Box::new(AstNode::ArrayLiteral {
+                elements: vec![
+                    AstNode::Literal(LiteralValue::String("a".to_string())),
+                    AstNode::Literal(LiteralValue::String("b".to_string())),
+                    AstNode::Literal(LiteralValue::String("c".to_string())),
+                ],
+            }),
+            index: Box::new(AstNode::Literal(LiteralValue::Number(2.0))),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::String("c".to_string()));
+    }
+    
+    #[test]
+    fn test_runtime_add_subtract() {
+        let mut runtime = Runtime::new();
+        
+        // Test addition
+        let node = AstNode::Add {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(5.0))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::Number(15.0));
+        
+        // Test subtraction
+        let node2 = AstNode::Subtract {
+            left: Box::new(AstNode::Literal(LiteralValue::Number(10.0))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(3.0))),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::Number(7.0));
+    }
+    
+    #[test]
+    fn test_runtime_string_concat() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::StringConcat {
+            left: Box::new(AstNode::Literal(LiteralValue::String("Hello".to_string()))),
+            right: Box::new(AstNode::Literal(LiteralValue::String(" World".to_string()))),
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        assert_eq!(result, Value::String("Hello World".to_string()));
+        
+        // Test with number coercion
+        let node2 = AstNode::StringConcat {
+            left: Box::new(AstNode::Literal(LiteralValue::String("Value: ".to_string()))),
+            right: Box::new(AstNode::Literal(LiteralValue::Number(42.0))),
+        };
+        let result2 = runtime.eval_node(&node2).unwrap();
+        assert_eq!(result2, Value::String("Value: 42".to_string()));
+    }
+    
+    #[test]
+    fn test_runtime_array_literal() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::ArrayLiteral {
+            elements: vec![
+                AstNode::Literal(LiteralValue::Number(1.0)),
+                AstNode::Literal(LiteralValue::Number(2.0)),
+                AstNode::Literal(LiteralValue::Number(3.0)),
+            ],
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        
+        match result {
+            Value::Array(arr) => {
+                assert_eq!(arr.len(), 3);
+                assert_eq!(arr[0], Value::Number(1.0));
+                assert_eq!(arr[1], Value::Number(2.0));
+                assert_eq!(arr[2], Value::Number(3.0));
+            }
+            _ => panic!("Expected array"),
+        }
+    }
+    
+    #[test]
+    fn test_runtime_object_literal() {
+        let mut runtime = Runtime::new();
+        
+        let node = AstNode::ObjectLiteral {
+            pairs: vec![
+                ("name".to_string(), AstNode::Literal(LiteralValue::String("Alice".to_string()))),
+                ("age".to_string(), AstNode::Literal(LiteralValue::Number(30.0))),
+            ],
+        };
+        let result = runtime.eval_node(&node).unwrap();
+        
+        match result {
+            Value::Object(obj) => {
+                assert_eq!(obj.get("name"), Some(&Value::String("Alice".to_string())));
+                assert_eq!(obj.get("age"), Some(&Value::Number(30.0)));
+            }
+            _ => panic!("Expected object"),
         }
     }
 }

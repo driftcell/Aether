@@ -1,0 +1,36 @@
+// ==================================================================
+// Aether Self-Hosting Lexer (v1.4)
+// This lexer is written in Aether and can tokenize Aether source code
+// First step of compiler bootstrapping
+// ==================================================================
+
+// Token types as constants
+🧊 TOKEN_OUTPUT "OUTPUT" ⨠
+🧊 TOKEN_INPUT "INPUT" ⨠
+🧊 TOKEN_PIPE "PIPE" ⨠
+🧊 TOKEN_SEQUENCE "SEQUENCE" ⨠
+🧊 TOKEN_STRING "STRING" ⨠
+🧊 TOKEN_EOF "EOF" ⨠
+
+// Create test tokens for hello world: 📤 "Hello"
+[
+  {type: "OUTPUT", value: "📤", position: 0},
+  {type: "STRING", value: "Hello", position: 3}
+] ▷ tokens ⨠
+
+// Output the token count (tests array length)
+tokens ⇢ 📏 ▷ count ⨠
+🪵 count ⨠
+
+// Test string operations
+"Hello" ▷ source ⨠
+source ⇢ 📏 ▷ len ⨠
+🪵 len ⨠
+
+// Test character access (for lexer iteration)
+source[0] ▷ firstChar ⨠
+🪵 firstChar ⨠
+
+// Test string concatenation for building tokens
+"Token: " ⧺ firstChar ▷ msg ⨠
+📤 msg

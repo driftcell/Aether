@@ -1,0 +1,24 @@
+// Bootstrap operations test (v1.4)
+// This tests the new operations needed for compiler self-hosting
+
+// Test array literal and indexing
+[1, 2, 3, 4, 5] ▷ arr ⨠
+
+// Test length
+arr ⇢ 📏 ▷ len ⨠
+🪵 len ⨠
+
+// Test string operations
+"Hello World" ▷ str ⨠
+str ⇢ 📏 ▷ strLen ⨠
+🪵 strLen ⨠
+
+// Test arithmetic
+5 + 3 ▷ sum ⨠
+10 - 4 ▷ diff ⨠
+🪵 sum ⨠
+🪵 diff ⨠
+
+// Test string concatenation  
+"Hello" ⧺ " " ⧺ "World" ▷ greeting ⨠
+📤 greeting
