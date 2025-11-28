@@ -1,0 +1,29 @@
+// Simplified bootstrapping lexer demo
+// Tests core bootstrap operations
+
+// Test 1: Array literal and length
+[1, 2, 3] ▷ arr ⨠
+arr ⇢ 📏 ▷ len ⨠
+🪵 len ⨠
+
+// Test 2: Object literal
+{type: "TOKEN", value: "📤"} ▷ token ⨠
+🪵 token ⨠
+
+// Test 3: Array push
+arr ⊞ 4 ▷ arr2 ⨠
+arr2 ⇢ 📏 ▷ len2 ⨠
+🪵 len2 ⨠
+
+// Test 4: String indexing
+"Hello" ▷ str ⨠
+str[0] ▷ first ⨠
+🪵 first ⨠
+
+// Test 5: Arithmetic
+5 + 3 ▷ sum ⨠
+🪵 sum ⨠
+
+// Test 6: String concat
+"Hello" ⧺ " World" ▷ greeting ⨠
+📤 greeting

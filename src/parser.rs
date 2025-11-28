@@ -904,6 +904,10 @@ impl Parser {
                         elements.push(self.parse_expression()?);
                         
                         while self.match_token_type(&TokenType::Comma) {
+                            // Support trailing comma by checking for closing bracket
+                            if self.check_token_type(&TokenType::RightBracket) {
+                                break;
+                            }
                             elements.push(self.parse_expression()?);
                         }
                     }

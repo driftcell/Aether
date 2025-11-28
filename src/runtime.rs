@@ -1432,7 +1432,14 @@ impl Runtime {
                 let idx = self.eval_node(index)?;
                 
                 let idx_num = match idx {
-                    Value::Number(n) => n as usize,
+                    Value::Number(n) => {
+                        if n < 0.0 || n.fract() != 0.0 {
+                            return Err(AetherError::RuntimeError(
+                                format!("Index must be a non-negative integer, got {}", n)
+                            ));
+                        }
+                        n as usize
+                    },
                     _ => return Err(AetherError::RuntimeError("Index must be a number".to_string())),
                 };
                 
@@ -1523,7 +1530,14 @@ impl Runtime {
                 let idx = self.eval_node(index)?;
                 
                 let idx_num = match idx {
-                    Value::Number(n) => n as usize,
+                    Value::Number(n) => {
+                        if n < 0.0 || n.fract() != 0.0 {
+                            return Err(AetherError::RuntimeError(
+                                format!("CharAt index must be a non-negative integer, got {}", n)
+                            ));
+                        }
+                        n as usize
+                    },
                     _ => return Err(AetherError::RuntimeError("CharAt index must be a number".to_string())),
                 };
                 
@@ -1544,13 +1558,27 @@ impl Runtime {
             AstNode::Slice { target, start, end } => {
                 let tgt = self.eval_node(target)?;
                 let start_idx = match self.eval_node(start)? {
-                    Value::Number(n) => n as usize,
+                    Value::Number(n) => {
+                        if n < 0.0 || n.fract() != 0.0 {
+                            return Err(AetherError::RuntimeError(
+                                format!("Slice start must be a non-negative integer, got {}", n)
+                            ));
+                        }
+                        n as usize
+                    },
                     _ => return Err(AetherError::RuntimeError("Slice start must be a number".to_string())),
                 };
                 
                 let end_idx = if let Some(end_node) = end {
                     match self.eval_node(end_node)? {
-                        Value::Number(n) => Some(n as usize),
+                        Value::Number(n) => {
+                            if n < 0.0 || n.fract() != 0.0 {
+                                return Err(AetherError::RuntimeError(
+                                    format!("Slice end must be a non-negative integer, got {}", n)
+                                ));
+                            }
+                            Some(n as usize)
+                        },
                         _ => return Err(AetherError::RuntimeError("Slice end must be a number".to_string())),
                     }
                 } else {
