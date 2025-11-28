@@ -216,6 +216,18 @@ impl VM {
                     self.stack.push(Value::Boolean((left - right).abs() < APPROX_EPSILON));
                 }
                 
+                Opcode::GreaterEqual => {
+                    let right = self.pop_number()?;
+                    let left = self.pop_number()?;
+                    self.stack.push(Value::Boolean(left >= right));
+                }
+                
+                Opcode::LessEqual => {
+                    let right = self.pop_number()?;
+                    let left = self.pop_number()?;
+                    self.stack.push(Value::Boolean(left <= right));
+                }
+                
                 Opcode::And => {
                     let right = self.stack.pop()
                         .ok_or_else(|| AetherError::RuntimeError("Stack underflow".to_string()))?;

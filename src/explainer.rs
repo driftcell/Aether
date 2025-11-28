@@ -282,6 +282,8 @@ impl Explainer {
                 let op_str = match operator {
                     crate::parser::ComparisonOp::GreaterThan => ">",
                     crate::parser::ComparisonOp::LessThan => "<",
+                    crate::parser::ComparisonOp::GreaterEqual => ">=",
+                    crate::parser::ComparisonOp::LessEqual => "<=",
                 };
                 format!(
                     "({} {} {})",
@@ -469,6 +471,9 @@ impl Explainer {
             AstNode::ArrayPush { .. } => format!("{}array push", self.indent()),
             AstNode::Add { .. } => format!("{}add", self.indent()),
             AstNode::Subtract { .. } => format!("{}subtract", self.indent()),
+            AstNode::Multiply { .. } => format!("{}multiply", self.indent()),
+            AstNode::Divide { .. } => format!("{}divide", self.indent()),
+            AstNode::Modulo { .. } => format!("{}modulo", self.indent()),
             AstNode::StringConcat { .. } => format!("{}string concat", self.indent()),
             AstNode::CharAt { .. } => format!("{}char at", self.indent()),
             AstNode::Slice { .. } => format!("{}slice", self.indent()),

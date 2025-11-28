@@ -514,6 +514,24 @@ pub enum AstNode {
         right: Box<AstNode>,
     },
     
+    /// Arithmetic multiplication
+    Multiply {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
+    /// Arithmetic division
+    Divide {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
+    /// Modulo operation
+    Modulo {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
     /// Character access (get char at index)
     CharAt {
         target: Box<AstNode>,
@@ -543,6 +561,8 @@ pub enum AstNode {
 pub enum ComparisonOp {
     GreaterThan,
     LessThan,
+    GreaterEqual,
+    LessEqual,
 }
 
 /// Literal values in Aether
@@ -753,6 +773,69 @@ impl Parser {
                         expr = AstNode::StringConcat {
                             left: Box::new(expr),
                             right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::Multiply) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Multiply {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::Divide) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Divide {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::Modulo) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Modulo {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::GreaterEqual) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Comparison {
+                            left: Box::new(expr),
+                            operator: ComparisonOp::GreaterEqual,
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::LessEqual) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Comparison {
+                            left: Box::new(expr),
+                            operator: ComparisonOp::LessEqual,
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    // Index access: expr⟦index⟧
+                    TokenType::Symbol(Symbol::IndexStart) => {
+                        self.advance();
+                        let index = self.parse_expression()?;
+                        // Expect closing IndexEnd
+                        if !self.match_symbol(&Symbol::IndexEnd) {
+                            return Err(AetherError::ParserError(
+                                "Expected closing ⟧ for index access".to_string()
+                            ));
+                        }
+                        expr = AstNode::Index {
+                            target: Box::new(expr),
+                            index: Box::new(index),
                         };
                         matched = true;
                     }

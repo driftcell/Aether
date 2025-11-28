@@ -96,6 +96,23 @@ impl Lexer {
             }
             return Ok(Token::new(TokenType::Eof, self.position, 0));
         }
+        
+        // Handle division operator (must be after comment check)
+        if current == "/" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::Symbol(Symbol::Divide), start_pos, 1));
+        }
+        
+        // Handle arithmetic operators that might be confused with other syntax
+        if current == "*" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::Symbol(Symbol::Multiply), start_pos, 1));
+        }
+        
+        if current == "%" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::Symbol(Symbol::Modulo), start_pos, 1));
+        }
 
         // Handle whitespace
         if current == " " || current == "\t" {
