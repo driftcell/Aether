@@ -477,6 +477,65 @@ pub enum AstNode {
         operator: ComparisonOp,
         right: Box<AstNode>,
     },
+    
+    // Bootstrap operations (v1.4 - for compiler self-hosting)
+    /// Get length of string or array
+    Length {
+        value: Box<AstNode>,
+    },
+    
+    /// Array/string indexing
+    Index {
+        target: Box<AstNode>,
+        index: Box<AstNode>,
+    },
+    
+    /// Push element to array
+    ArrayPush {
+        array: Box<AstNode>,
+        element: Box<AstNode>,
+    },
+    
+    /// Arithmetic addition
+    Add {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
+    /// Arithmetic subtraction
+    Subtract {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
+    /// String concatenation
+    StringConcat {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+    },
+    
+    /// Character access (get char at index)
+    CharAt {
+        target: Box<AstNode>,
+        index: Box<AstNode>,
+    },
+    
+    /// Array slice
+    Slice {
+        target: Box<AstNode>,
+        start: Box<AstNode>,
+        end: Option<Box<AstNode>>,
+    },
+    
+    /// Array literal
+    ArrayLiteral {
+        elements: Vec<AstNode>,
+    },
+    
+    /// Object literal
+    ObjectLiteral {
+        pairs: Vec<(String, AstNode)>,
+    },
 }
 
 /// Comparison operators
@@ -608,61 +667,115 @@ impl Parser {
             }
         }
         
-        // Handle comparison and equality operators
-        if let Some(token) = self.peek() {
-            match &token.token_type {
-                TokenType::GreaterThan => {
-                    self.advance();
-                    let right = self.parse_primary()?;
-                    expr = AstNode::Comparison {
-                        left: Box::new(expr),
-                        operator: ComparisonOp::GreaterThan,
-                        right: Box::new(right),
-                    };
+        // Handle comparison, equality, and arithmetic operators (can be chained)
+        loop {
+            let mut matched = false;
+            if let Some(token) = self.peek() {
+                match &token.token_type {
+                    TokenType::GreaterThan => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Comparison {
+                            left: Box::new(expr),
+                            operator: ComparisonOp::GreaterThan,
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::LessThan => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Comparison {
+                            left: Box::new(expr),
+                            operator: ComparisonOp::LessThan,
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::Equal) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Equal {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::NotEqual) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::NotEqual {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::And) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::And {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::Or) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Or {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    // Bootstrap operations - arithmetic
+                    TokenType::Symbol(Symbol::Add) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Add {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::Subtract) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::Subtract {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    TokenType::Symbol(Symbol::Concat) => {
+                        self.advance();
+                        let right = self.parse_primary()?;
+                        expr = AstNode::StringConcat {
+                            left: Box::new(expr),
+                            right: Box::new(right),
+                        };
+                        matched = true;
+                    }
+                    _ => {}
                 }
-                TokenType::LessThan => {
-                    self.advance();
-                    let right = self.parse_primary()?;
-                    expr = AstNode::Comparison {
-                        left: Box::new(expr),
-                        operator: ComparisonOp::LessThan,
-                        right: Box::new(right),
-                    };
-                }
-                TokenType::Symbol(Symbol::Equal) => {
-                    self.advance();
-                    let right = self.parse_primary()?;
-                    expr = AstNode::Equal {
-                        left: Box::new(expr),
-                        right: Box::new(right),
-                    };
-                }
-                TokenType::Symbol(Symbol::NotEqual) => {
-                    self.advance();
-                    let right = self.parse_primary()?;
-                    expr = AstNode::NotEqual {
-                        left: Box::new(expr),
-                        right: Box::new(right),
-                    };
-                }
-                TokenType::Symbol(Symbol::And) => {
-                    self.advance();
-                    let right = self.parse_primary()?;
-                    expr = AstNode::And {
-                        left: Box::new(expr),
-                        right: Box::new(right),
-                    };
-                }
-                TokenType::Symbol(Symbol::Or) => {
-                    self.advance();
-                    let right = self.parse_primary()?;
-                    expr = AstNode::Or {
-                        left: Box::new(expr),
-                        right: Box::new(right),
-                    };
-                }
-                _ => {}
             }
+            if !matched {
+                break;
+            }
+        }
+        
+        // Handle indexing with brackets
+        while self.match_token_type(&TokenType::LeftBracket) {
+            let index = self.parse_expression()?;
+            if !self.match_token_type(&TokenType::RightBracket) {
+                return Err(AetherError::ParserError(
+                    "Expected ']' after index expression".to_string(),
+                ));
+            }
+            expr = AstNode::Index {
+                target: Box::new(expr),
+                index: Box::new(index),
+            };
         }
 
         while self.match_symbol(&Symbol::Pipe) || self.match_symbol(&Symbol::PipeInto) {
@@ -781,6 +894,109 @@ impl Parser {
                         ));
                     }
                     Ok(expr)
+                }
+                // Handle array literals
+                TokenType::LeftBracket => {
+                    self.advance();
+                    let mut elements = Vec::new();
+                    
+                    if !self.check_token_type(&TokenType::RightBracket) {
+                        elements.push(self.parse_expression()?);
+                        
+                        while self.match_token_type(&TokenType::Comma) {
+                            // Support trailing comma by checking for closing bracket
+                            if self.check_token_type(&TokenType::RightBracket) {
+                                break;
+                            }
+                            elements.push(self.parse_expression()?);
+                        }
+                    }
+                    
+                    if !self.match_token_type(&TokenType::RightBracket) {
+                        return Err(AetherError::ParserError(
+                            "Expected ']' after array elements".to_string(),
+                        ));
+                    }
+                    
+                    Ok(AstNode::ArrayLiteral { elements })
+                }
+                // Handle object literals
+                TokenType::LeftBrace => {
+                    self.advance();
+                    let mut pairs = Vec::new();
+                    
+                    if !self.check_token_type(&TokenType::RightBrace) {
+                        // Parse key: value pairs
+                        loop {
+                            // Parse key (identifier or string)
+                            let key = if let Some(t) = self.peek() {
+                                match &t.token_type {
+                                    TokenType::Symbol(Symbol::Identifier(id)) => {
+                                        let k = id.clone();
+                                        self.advance();
+                                        k
+                                    }
+                                    TokenType::Symbol(Symbol::StringLiteral(s)) => {
+                                        let k = s.clone();
+                                        self.advance();
+                                        k
+                                    }
+                                    _ => return Err(AetherError::ParserError(
+                                        "Expected key in object literal".to_string(),
+                                    )),
+                                }
+                            } else {
+                                return Err(AetherError::ParserError(
+                                    "Unexpected end in object literal".to_string(),
+                                ));
+                            };
+                            
+                            // Expect colon
+                            if !self.match_token_type(&TokenType::Colon) {
+                                return Err(AetherError::ParserError(
+                                    "Expected ':' after key in object literal".to_string(),
+                                ));
+                            }
+                            
+                            // Parse value
+                            let value = self.parse_expression()?;
+                            pairs.push((key, value));
+                            
+                            if !self.match_token_type(&TokenType::Comma) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if !self.match_token_type(&TokenType::RightBrace) {
+                        return Err(AetherError::ParserError(
+                            "Expected '}' after object".to_string(),
+                        ));
+                    }
+                    
+                    Ok(AstNode::ObjectLiteral { pairs })
+                }
+                // Bootstrap operations - Length
+                TokenType::Symbol(Symbol::Length) => {
+                    self.advance();
+                    let value = if !self.is_at_end() && !self.check_symbol(&Symbol::Sequence) && !self.check_symbol(&Symbol::Pipe) && !self.check_symbol(&Symbol::PipeInto) {
+                        self.parse_primary()?
+                    } else {
+                        // Use piped value
+                        AstNode::Variable("_pipe".to_string())
+                    };
+                    Ok(AstNode::Length {
+                        value: Box::new(value),
+                    })
+                }
+                // Bootstrap operations - Push
+                TokenType::Symbol(Symbol::Push) => {
+                    self.advance();
+                    let element = self.parse_primary()?;
+                    Ok(AstNode::ArrayPush {
+                        array: Box::new(AstNode::Variable("_pipe".to_string())),
+                        element: Box::new(element),
+                    })
                 }
                 TokenType::Symbol(Symbol::Empty) => {
                     self.advance();
@@ -1618,6 +1834,15 @@ impl Parser {
     fn check_symbol(&self, symbol: &Symbol) -> bool {
         if let Some(token) = self.peek() {
             matches!(&token.token_type, TokenType::Symbol(s) if s == symbol)
+        } else {
+            false
+        }
+    }
+    
+    /// Check if current token matches a token type
+    fn check_token_type(&self, token_type: &TokenType) -> bool {
+        if let Some(token) = self.peek() {
+            std::mem::discriminant(&token.token_type) == std::mem::discriminant(token_type)
         } else {
             false
         }

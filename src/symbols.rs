@@ -253,6 +253,32 @@ pub enum Symbol {
     Eos,
     /// Separator
     Separator,
+    
+    // Bootstrap operations (v1.4 - for compiler self-hosting)
+    /// 📏 - Length of string or array
+    Length,
+    /// ⟦ - Index access start
+    IndexStart,
+    /// ⟧ - Index access end
+    IndexEnd,
+    /// ⊞ - Push element to array
+    Push,
+    /// + - Addition
+    Add,
+    /// - - Subtraction (arithmetic)
+    Subtract,
+    /// ⧺ - String concatenation
+    Concat,
+    /// ⟨ - Char access start
+    CharStart,
+    /// ⟩ - Char access end
+    CharEnd,
+    /// ⊢ - Array slice start
+    SliceStart,
+    /// ⊣ - Array slice end
+    SliceEnd,
+    /// ≔ - Assignment (alternative to PipeInto)
+    Assign,
 }
 
 impl Symbol {
@@ -361,6 +387,19 @@ impl Symbol {
             "🐏" => Some(Symbol::Memory),
             "👋" => Some(Symbol::Exit),
             "📶" => Some(Symbol::Signal),
+            // Bootstrap operations (v1.4)
+            "📏" => Some(Symbol::Length),
+            "⟦" => Some(Symbol::IndexStart),
+            "⟧" => Some(Symbol::IndexEnd),
+            "⊞" => Some(Symbol::Push),
+            "+" => Some(Symbol::Add),
+            "-" => Some(Symbol::Subtract),
+            "⧺" => Some(Symbol::Concat),
+            "⟨" => Some(Symbol::CharStart),
+            "⟩" => Some(Symbol::CharEnd),
+            "⊢" => Some(Symbol::SliceStart),
+            "⊣" => Some(Symbol::SliceEnd),
+            "≔" => Some(Symbol::Assign),
             _ => None,
         }
     }
@@ -477,6 +516,19 @@ impl Symbol {
             Symbol::Memory => "🐏".to_string(),
             Symbol::Exit => "👋".to_string(),
             Symbol::Signal => "📶".to_string(),
+            // Bootstrap operations (v1.4)
+            Symbol::Length => "📏".to_string(),
+            Symbol::IndexStart => "⟦".to_string(),
+            Symbol::IndexEnd => "⟧".to_string(),
+            Symbol::Push => "⊞".to_string(),
+            Symbol::Add => "+".to_string(),
+            Symbol::Subtract => "-".to_string(),
+            Symbol::Concat => "⧺".to_string(),
+            Symbol::CharStart => "⟨".to_string(),
+            Symbol::CharEnd => "⟩".to_string(),
+            Symbol::SliceStart => "⊢".to_string(),
+            Symbol::SliceEnd => "⊣".to_string(),
+            Symbol::Assign => "≔".to_string(),
             Symbol::Identifier(id) => id.clone(),
             Symbol::StringLiteral(s) => format!("\"{}\"", s),
             Symbol::NumberLiteral(n) => n.to_string(),
@@ -597,6 +649,19 @@ impl Symbol {
             Symbol::Memory => "Memory operations/manual allocation",
             Symbol::Exit => "Exit program (with exit code)",
             Symbol::Signal => "Send/capture system signal",
+            // Bootstrap operations (v1.4)
+            Symbol::Length => "Get length of string or array",
+            Symbol::IndexStart => "Start index access",
+            Symbol::IndexEnd => "End index access",
+            Symbol::Push => "Push element to array",
+            Symbol::Add => "Arithmetic addition",
+            Symbol::Subtract => "Arithmetic subtraction",
+            Symbol::Concat => "String concatenation",
+            Symbol::CharStart => "Start character access",
+            Symbol::CharEnd => "End character access",
+            Symbol::SliceStart => "Start array slice",
+            Symbol::SliceEnd => "End array slice",
+            Symbol::Assign => "Variable assignment",
             Symbol::Identifier(_) => "Identifier",
             Symbol::StringLiteral(_) => "String literal",
             Symbol::NumberLiteral(_) => "Number literal",

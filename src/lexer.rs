@@ -16,6 +16,11 @@ pub enum TokenType {
     Dot,
     GreaterThan,
     LessThan,
+    LeftBracket,
+    RightBracket,
+    LeftBrace,
+    RightBrace,
+    Comma,
     Eof,
 }
 
@@ -137,13 +142,41 @@ impl Lexer {
             self.position += 1;
             return Ok(Token::new(TokenType::LessThan, start_pos, 1));
         }
+        
+        // Handle brackets for array/indexing
+        if current == "[" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::LeftBracket, start_pos, 1));
+        }
+        
+        if current == "]" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::RightBracket, start_pos, 1));
+        }
+        
+        // Handle braces for objects
+        if current == "{" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::LeftBrace, start_pos, 1));
+        }
+        
+        if current == "}" {
+            self.position += 1;
+            return Ok(Token::new(TokenType::RightBrace, start_pos, 1));
+        }
+        
+        // Handle comma
+        if current == "," {
+            self.position += 1;
+            return Ok(Token::new(TokenType::Comma, start_pos, 1));
+        }
 
         // Handle string literals
         if current == "\"" {
             return self.read_string_literal(start_pos);
         }
 
-        // Handle numbers
+        // Handle numbers (including negative numbers)
         if current.chars().next().map_or(false, |c| c.is_numeric()) {
             return self.read_number(start_pos);
         }
